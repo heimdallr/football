@@ -1,0 +1,11 @@
+AddTarget(
+	NAME fmt
+	TYPE static_lib
+	SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/fmt/src"
+	PROJECT_GROUP Util
+	INCLUDE_DIRS
+		"${CMAKE_CURRENT_LIST_DIR}/fmt/include"
+	EXCLUDE_SOURCES
+		fmt.cc
+	STATIC_RUNTIME
+)
