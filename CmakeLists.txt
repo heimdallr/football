@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 3.12)
+project(football)
+
+add_compile_options(
+	/std:c++latest
+	/we5038 # reorder
+	/wd4503	# decorated name length exceeded, name was truncated
+	/wd4566 # Ошибка в ассертах с русскими сиволами assert(true && "Превед") - character represented by universal-character-name
+	/wd4820 # bytes padding added after data member
+	/wd4710 # function not inlined
+	/wd4711 # function selected for automatic inline expansion
+	/wd5045 # compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+	/wd4866 # compiler may not enforce left-to-right evaluation order for call to std::operator<<
+)
+add_definitions(
+	-DNOMINMAX
+	-D_UNICODE
+	-DUNICODE
+	-D_CRT_SECURE_NO_WARNINGS
+	-D_SCL_SECURE_NO_WARNINGS
+	-D_USE_MATH_DEFINES
+	-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+	${WINVER}
+)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+link_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+include("src/ext/scripts/cmake/target.cmake")
+include("src/ext/scripts/cmake/utils.cmake")
+
+include("src/ext/fmt.cmake")
+include("src/home/PlayerParser.cmake")
