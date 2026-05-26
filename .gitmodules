@@ -4,3 +4,6 @@
 [submodule "src/ext/foundation"]
 	path = src/ext/foundation
 	url = ../books-fnd.git
+[submodule "src/ext/Hypodermic"]
+	path = src/ext/Hypodermic
+	url = ../Hypodermic.git
