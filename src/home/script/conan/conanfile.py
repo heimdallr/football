@@ -1,0 +1,33 @@
+import os
+
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMakeDeps
+
+def configure_boost(recipe):
+    recipe.options["boost"].shared = True
+    recipe.options["boost"].header_only = True
+    recipe.options["boost"].error_code_header_only = True
+
+def configure_icu(recipe):
+    recipe.options["icu"].shared = True
+
+class FLibrary(ConanFile):
+    name = "FLibrary"
+    settings = "os", "compiler", "build_type", "arch"
+
+    def requirements(self):
+        self.requires("boost/1.89.0")
+        self.requires("plog/1.1.10")
+        self.requires("icu/78.2")
+
+    def configure(self):
+        configure_boost(self)
+        configure_icu(self)
+
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+
+        tc = CMakeToolchain(self)
+        tc.user_presets_path = False
+        tc.generate()
