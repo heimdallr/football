@@ -14,19 +14,14 @@ public:
 	int         Id;
 	std::string Country, Type, Name, Birthday;
 
-	Player(int id, const std::filesystem::path& path, std::string type, std::string&& name, std::string&& birthday)
-		: Id(id)
-		, Country(path.filename().string())
-		, Type(std::move(type))
-		, Name(std::move(name))
-		, Birthday(std::move(birthday))
+	Player(const int id, const std::filesystem::path& path, std::string type, std::string name, std::string birthday)
+		: Id { id }
+		, Country { path.filename().string() }
+		, Type { std::move(type) }
+		, Name { std::move(name) }
+		, Birthday { std::move(birthday) }
 	{
 	}
-
-	Player(const Player&)            = delete;
-	Player(Player&&)                 = delete;
-	Player& operator=(const Player&) = delete;
-	Player& operator=(Player&& rhs)  = delete;
 
 	bool operator<(const Player& rhs) const noexcept
 	{
