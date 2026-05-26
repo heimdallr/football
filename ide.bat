@@ -1,11 +1,11 @@
 @echo off
+
 if "%*"=="" goto read
 set SOLUTION_PATH=%~dp0%1
 goto find
 
 :read
-set /p PLATFORM=< %TEMP%\platform.ini
-set SOLUTION_PATH=%~dp0build%PLATFORM%
+set SOLUTION_PATH=%~dp0build\Debug
 
 :find
 FOR %%F IN (%SOLUTION_PATH%\*.sln) DO (

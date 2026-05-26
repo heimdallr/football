@@ -1,16 +1,37 @@
 cmake_minimum_required(VERSION 3.12)
-project(football)
+
+set (CMAKE_CXX_STANDARD 23)
+
+execute_process(COMMAND git log -1 --format=%h WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} OUTPUT_VARIABLE GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "Git commit hash: ${GIT_HASH}")
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(COMPANY_NAME HomeCompa)
+set(COPYRIGHT "© 2026 heimdallr")
+set(PRODUCT_DESCRIPTION "Footbal championships")
+set(PRODUCT_ICON "${CMAKE_CURRENT_LIST_DIR}/src/home/resources/icons/main.ico")
+
+set(MAJOR_PRODUCT_VERSION 2)
+set(MINOR_PRODUCT_VERSION 6)
+set(PATCH_PRODUCT_VERSION 3)
+set(PRODUCT_VERSION ${MAJOR_PRODUCT_VERSION}.${MINOR_PRODUCT_VERSION}.${PATCH_PRODUCT_VERSION})
+set(PRODUCT_VERSION_FULL ${PRODUCT_VERSION})
+
+
+project(football VERSION ${PRODUCT_VERSION})
 
 add_compile_options(
-	/std:c++latest
+	/MP     # multi-processor compilation
+	/W4		# warnings level 4
+	/WX		# warning is error
 	/we5038 # reorder
+	/wd4250 # inherits via dominance
+	/wd4251 # member (ala std::unique_ptr<some>) needs to have dll-interface to be used by clients of class 'some'
+	/wd4275 # non dll-interface class 'ISome' used as base for dll-interface class 'Some'
 	/wd4503	# decorated name length exceeded, name was truncated
-	/wd4566 # Ошибка в ассертах с русскими сиволами assert(true && "Превед") - character represented by universal-character-name
-	/wd4820 # bytes padding added after data member
-	/wd4710 # function not inlined
-	/wd4711 # function selected for automatic inline expansion
-	/wd5045 # compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
-	/wd4866 # compiler may not enforce left-to-right evaluation order for call to std::operator<<
+	/bigobj # number of sections exceeded object file format limit
 )
 add_definitions(
 	-DNOMINMAX
@@ -30,5 +51,4 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR})
 include("src/ext/scripts/cmake/target.cmake")
 include("src/ext/scripts/cmake/utils.cmake")
 
-include("src/ext/fmt.cmake")
 include("src/home/PlayerParser.cmake")

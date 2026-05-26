@@ -1,14 +1,9 @@
-__pragma(warning(push, 0))
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <stdexcept>
 #include <string>
-
-#include "fmt/core.h"
-__pragma(warning(pop))
-
 
 struct Player
 {
@@ -38,7 +33,7 @@ public:
 
     std::ostream & Write(std::ostream & stream) const
     {
-        return stream << fmt::format("insert into t_player_buf(country, player_type, num, name, birthday) values('{0}', '{1}', {2}, '{3}', '{4}');\n", Country, Type, Id, Name, Birthday);
+        return stream << std::format("insert into t_player_buf(country, player_type, num, name, birthday) values('{}', '{}', {}, '{}', '{}');\n", Country, Type, Id, Name, Birthday);
     }
 };
 
@@ -83,7 +78,7 @@ bool GetLine(std::istream & stream, std::string & buf)
     return true;
 }
 
-int main(int argc, char * argv[])
+int main(const int argc, char * argv[])
 {
     try
     {
@@ -107,7 +102,7 @@ int main(int argc, char * argv[])
                 const auto id = std::stoi(buf);
                 GetLine(inp, name);
                 GetLine(inp, birthday);
-                GetLine(inp, buf); // клуб
+                GetLine(inp, buf); // club
             	
                 players.emplace(id, entry.path(), type, std::move(name), std::move(birthday));
             }
