@@ -36,6 +36,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project(football VERSION ${PRODUCT_VERSION})
 
+include(${BUILDSCRIPTS_ROOT}/cmake/conan.cmake)
+conan_install(
+	${CMAKE_SOURCE_DIR}/src/home/script/conan
+	${BUILDSCRIPTS_ROOT}/conan/profiles/${CONAN_PROFILE}_${CMAKE_BUILD_TYPE}
+	)
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_BINARY_DIR}/conan_toolchain.cmake")
+include("${CMAKE_BINARY_DIR}/conan_toolchain.cmake")
+
 add_compile_options(
 	/MP     # multi-processor compilation
 	/W4		# warnings level 4
@@ -59,18 +67,34 @@ add_definitions(
 )
 set(QtModules Core Gui Widgets)
 set(QtPlugins QSvgIcon QWindowsIntegration QModernWindowsStyle)
-find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS ${QtModules})
 
+find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS ${QtModules})
+find_package(plog REQUIRED)
+find_package(Boost REQUIRED)
+find_package(ICU REQUIRED COMPONENTS tu io uc i18n data)
+
+add_compile_definitions(PLOG_IMPORT)
 link_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 include(${BUILDSCRIPTS_ROOT}/cmake/target.cmake)
 include(${BUILDSCRIPTS_ROOT}/cmake/sdk.cmake)
 include(${BUILDSCRIPTS_ROOT}/cmake/utils.cmake)
 
+CopyAndInstallICU()
 CopyAndInstallQtModules(${QtModules})
 CopyAndInstallQtPlugins(${QtPlugins})
 
-include_directories(${FOUNDATION_ROOT})
-include(${FOUNDATION_ROOT}/fnd/fnd.cmake)
+include_directories(${FOUNDATION_ROOT} src/ext/Hypodermic)
 
-include("src/home/PlayerParser/PlayerParser.cmake")
+include(${FOUNDATION_ROOT}/fnd/fnd.cmake)
+include(${FOUNDATION_ROOT}/logging/logging.cmake)
+include(${FOUNDATION_ROOT}/platform/platform.cmake)
+include(${FOUNDATION_ROOT}/platformgui/platformgui.cmake)
+include(${FOUNDATION_ROOT}/settings/settings.cmake)
+include(${FOUNDATION_ROOT}/utilgui/utilgui.cmake)
+
+include(src/home/PlayerParser/PlayerParser.cmake)
+include(src/home/football/football.cmake)
+
+configure_file(${BUILDSCRIPTS_ROOT}/helpers/git_hash.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/git_hash.h @ONLY)
+configure_file(${BUILDSCRIPTS_ROOT}/helpers/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/version.h @ONLY)
