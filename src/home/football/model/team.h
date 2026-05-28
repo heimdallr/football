@@ -20,6 +20,8 @@ public:
 		enum
 		{
 			TeamId = Qt::UserRole + 1,
+			MatchId,
+			SubstituteMinute,
 		};
 	};
 

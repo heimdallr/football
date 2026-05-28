@@ -4,9 +4,12 @@
 
 #include <QSqlQuery>
 
+#include <config/version.h>
+
 #include "utilgui/GeometryRestorable.h"
 
 #include "SettingsConstant.h"
+#include "Team.h"
 
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
@@ -16,7 +19,14 @@ namespace
 
 constexpr auto MAIN_WINDOW = "MainWindow";
 
+QString GetChampInfo(const ISettings& settings, const QSqlDatabase& db)
+{
+	if (QSqlQuery query("select info from get_champ_info(?)", db); query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY)), query.exec() && query.next())
+		return query.value(0).toString();
+	return {};
 }
+
+} // namespace
 
 class MainWindow::Impl final
 	: Util::GeometryRestorable
@@ -32,6 +42,7 @@ public:
 		, m_settings { std::move(settings) }
 		, m_db { std::move(db) }
 		, m_modelChamp { std::shared_ptr<QAbstractItemModel> { std::move(modelChamp) } }
+		, m_champInfo { GetChampInfo(*m_settings, *m_db) }
 	{
 		m_ui.setupUi(&m_self);
 
@@ -43,11 +54,7 @@ public:
 		m_ui.pageMatch->Setup(m_db);
 
 		connect(m_ui.stackedWidget, &QStackedWidget::currentChanged, [this](const int index) {
-			if (index == 1)
-			{
-				const auto [idTeam1, idTeam2] = m_modelChamp->data(m_ui.viewChamp->currentIndex(), ModelChamp::Role::TeamIds).value<std::pair<int, int>>();
-				m_ui.pageMatch->SetTeams(idTeam1, idTeam2);
-			}
+			OnStackedWidgetCurrentChanged(index);
 		});
 
 		connect(m_ui.actionChangeMatchEndFlag, &QAction::triggered, [this] {
@@ -62,8 +69,7 @@ public:
 
 		LoadGeometry();
 
-		if (QSqlQuery query(QString("select info from get_champ_info(?)"), *m_db); query.bindValue(0, m_settings->Get(Constant::CHAMP_ID_KEY)), query.exec() && query.next())
-			m_self.setWindowTitle(query.value(0).toString());
+		SetTitle(m_champInfo);
 
 		m_self.addActions({ m_ui.actionExit, m_ui.actionHome });
 	}
@@ -74,10 +80,33 @@ public:
 	}
 
 private:
+	void OnStackedWidgetCurrentChanged(const int index)
+	{
+		switch (index)
+		{
+			case 0:
+				return SetTitle(m_champInfo);
+
+			case 1:
+			{
+				const auto [idTeam1, idTeam2]        = m_modelChamp->data(m_ui.viewChamp->currentIndex(), ModelChamp::Role::TeamIds).value<std::pair<int, int>>();
+				const auto [teamInfo1, teamInfo2]    = m_ui.pageMatch->SetTeams(idTeam1, idTeam2);
+				const auto& [team1, goal1, penalty1] = teamInfo1;
+				const auto& [team2, goal2, penalty2] = teamInfo2;
+				return SetTitle(QString("%1 - %2, %3:%4%5").arg(team1, team2).arg(goal1).arg(goal2).arg(penalty1 + penalty2 > 0 ? QString(" (%1:%2)").arg(penalty1).arg(penalty2) : QString {}));
+			}
+
+			default:
+				break;
+		}
+
+		assert(false && "unexpected page index");
+	}
+
 	void SetSpans(const int column)
 	{
 		QVariant currentValue;
-		int     currentRow = 0;
+		int      currentRow = 0;
 		for (auto row = 0, rowCount = m_modelChamp->rowCount(); row < rowCount; ++row)
 		{
 			if (auto value = m_modelChamp->index(row, column).data(); currentValue != value)
@@ -90,12 +119,19 @@ private:
 		}
 	}
 
+	void SetTitle(const QString& title) const
+	{
+		m_self.setWindowTitle(QString("%1 - [%2]").arg(PRODUCT_ID, title));
+	}
+
 private:
 	MainWindow& m_self;
 
 	PropagateConstPtr<ISettings, std::shared_ptr>          m_settings;
 	PropagateConstPtr<QSqlDatabase, std::shared_ptr>       m_db;
 	PropagateConstPtr<QAbstractItemModel, std::shared_ptr> m_modelChamp;
+
+	QString m_champInfo;
 
 	Ui::MainWindow m_ui {};
 };

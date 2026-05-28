@@ -2,6 +2,7 @@
 
 #include "Team.h"
 
+#include "model/reader.h"
 #include "model/team.h"
 #include "utilgui/MultiHeaderView.h"
 
@@ -71,25 +72,39 @@ public:
 
 	void Setup(std::shared_ptr<QSqlDatabase> db)
 	{
-		auto  model       = std::make_unique<ModelTeam>(std::move(db));
+		auto  model       = std::make_unique<ModelTeam>(db);
 		auto* sourceModel = model->sourceModel();
 		m_modelPlayers.reset(std::move(model));
 		m_modelSubstitutes.reset(std::make_unique<ModelTeam>(sourceModel));
+
+		m_db.reset(std::move(db));
 
 		AddHeader(*m_modelPlayers, *m_ui.viewPlayers);
 		AddHeader(*m_modelSubstitutes, *m_ui.viewSubstitutes);
 	}
 
-	void SetTeam(const int idTeam)
+	MatchTeamInfo SetTeam(const int idTeam)
 	{
 		m_modelPlayers->setData({}, idTeam, ModelTeam::Role::TeamId);
+
+		QSqlQuery query("select NAME, GOAL_COUNT, PENALTY_COUNT from GET_MATCH_COUNTRY_INFO(?)", *m_db);
+		query.bindValue(0, idTeam);
+		query.exec();
+		query.next();
+
+		auto result = ReadItem<MatchTeamInfo>(query);
+
+		m_ui.teamName->setText(result.name);
+
+		return result;
 	}
 
 private:
 	Team& m_self;
 
-	PropagateConstPtr<QAbstractItemModel> m_modelPlayers { std::unique_ptr<QAbstractItemModel> {} };
-	PropagateConstPtr<QAbstractItemModel> m_modelSubstitutes { std::unique_ptr<QAbstractItemModel> {} };
+	PropagateConstPtr<QSqlDatabase, std::shared_ptr> m_db { std::shared_ptr<QSqlDatabase> {} };
+	PropagateConstPtr<QAbstractItemModel>            m_modelPlayers { std::unique_ptr<QAbstractItemModel> {} };
+	PropagateConstPtr<QAbstractItemModel>            m_modelSubstitutes { std::unique_ptr<QAbstractItemModel> {} };
 
 	Ui::Team m_ui;
 };
@@ -107,7 +122,7 @@ void Team::Setup(std::shared_ptr<QSqlDatabase> db)
 	m_impl->Setup(std::move(db));
 }
 
-void Team::SetTeam(const int idTeam)
+MatchTeamInfo Team::SetTeam(const int idTeam)
 {
-	m_impl->SetTeam(idTeam);
+	return m_impl->SetTeam(idTeam);
 }

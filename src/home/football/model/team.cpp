@@ -1,5 +1,7 @@
 #include "team.h"
 
+#include <QColor>
+
 #include "fnd/IsOneOf.h"
 #include "fnd/ScopedCall.h"
 
@@ -13,20 +15,34 @@ namespace
 
 using Role = ModelTeam::Role;
 
+QVariant FromInt(const int value)
+{
+	constexpr auto white = 0x00FFFFFF;
+	if (value == white)
+		return {};
+
+	const QRgb rgb(value);
+	QColor     color;
+	color.setRed(qBlue(rgb));
+	color.setGreen(qGreen(rgb));
+	color.setBlue(qRed(rgb));
+	return color;
+}
+
 struct Item
 {
-	int     ordNum;
-	int     number;
-	QString name;
-	QString type;
-	int     champId;
-	int     matchId;
-	int     substituteMinute;
-	int     goalCount;
-	QString goalMinute;
-	QColor  cardColor;
-	QDate   birthday;
-	QColor  playerColor;
+	int      ordNum;
+	int      number;
+	QString  name;
+	QString  type;
+	int      champId;
+	int      matchId;
+	int      substituteMinute;
+	QVariant goalCount;
+	QString  goalMinute;
+	int      cardColor;
+	QDate    birthday;
+	int      playerColor;
 
 	QVariant Display(const int column) const
 	{
@@ -45,6 +61,21 @@ struct Item
 			default:
 				break;
 		}
+		return {};
+	}
+
+	QVariant Color(const int column) const
+	{
+		switch (column)
+		{
+			case 0:
+				return FromInt(cardColor);
+			case 1:
+				return FromInt(playerColor);
+			default:
+				break;
+		}
+
 		return {};
 	}
 };
@@ -82,6 +113,21 @@ private: // QAbstractTableModel
 
 			case Qt::TextAlignmentRole:
 				return QVariant::fromValue((index.column() == 0 ? Qt::AlignRight : IsOneOf(index.column(), 3, 4) ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter);
+
+			case Qt::BackgroundRole:
+				return item.Color(index.column());
+
+			case Qt::ForegroundRole:
+				if (const auto background = item.Color(index.column()); background.isValid())
+					return QColor(Qt::black);
+
+				return {};
+
+			case Role::MatchId:
+				return item.matchId;
+
+			case Role::SubstituteMinute:
+				return item.substituteMinute;
 
 			default:
 				break;
@@ -164,7 +210,9 @@ ModelTeam::ModelTeam(QAbstractItemModel* sourceModel, QObject* parent)
 
 ModelTeam::~ModelTeam() = default;
 
-bool ModelTeam::filterAcceptsRow(int /*sourceRow*/, const QModelIndex& /*sourceParent*/) const
+bool ModelTeam::filterAcceptsRow(const int sourceRow, const QModelIndex& sourceParent) const
 {
-	return true;
+	const auto sourceIndex  = sourceModel()->index(sourceRow, 0, sourceParent);
+	const auto isSubstitute = sourceIndex.data(Role::MatchId).toInt() == 0 || sourceIndex.data(Role::SubstituteMinute).toInt() != 0;
+	return isSubstitute == m_isSubstitutes;
 }

@@ -19,10 +19,9 @@ public:
 		m_ui.team2->Setup(std::move(db));
 	}
 
-	void SetTeams(const int idTeam1, const int idTeam2) const
+	std::pair<MatchTeamInfo, MatchTeamInfo> SetTeams(const int idTeam1, const int idTeam2) const
 	{
-		m_ui.team1->SetTeam(idTeam1);
-		m_ui.team2->SetTeam(idTeam2);
+		return std::make_pair(m_ui.team1->SetTeam(idTeam1), m_ui.team2->SetTeam(idTeam2));
 	}
 
 private:
@@ -44,7 +43,7 @@ void Match::Setup(std::shared_ptr<QSqlDatabase> db) const
 	m_impl->Setup(std::move(db));
 }
 
-void Match::SetTeams(const int idTeam1, const int idTeam2) const
+std::pair<MatchTeamInfo, MatchTeamInfo> Match::SetTeams(const int idTeam1, const int idTeam2) const
 {
-	m_impl->SetTeams(idTeam1, idTeam2);
+	return m_impl->SetTeams(idTeam1, idTeam2);
 }

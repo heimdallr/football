@@ -10,6 +10,8 @@ class QSqlDatabase;
 namespace HomeCompa::Football
 {
 
+struct MatchTeamInfo;
+
 class Match final : public QWidget
 {
 	Q_OBJECT
@@ -20,7 +22,7 @@ public:
 	~Match() override;
 
 	void Setup(std::shared_ptr<QSqlDatabase> db) const;
-	void SetTeams(int idTeam1, int idTeam2) const;
+	std::pair<MatchTeamInfo, MatchTeamInfo> SetTeams(int idTeam1, int idTeam2) const;
 
 private:
 	class Impl;
