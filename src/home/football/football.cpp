@@ -1,9 +1,12 @@
 #include <QApplication>
 #include <QDir>
 #include <QMainWindow>
+#include <QSqlDatabase>
+#include <QStyleHints>
 
 #include "Hypodermic/Hypodermic.h"
 #include "logging/init.h"
+#include "settings/ISettings.h"
 
 #include "di_app.h"
 #include "log.h"
@@ -16,17 +19,17 @@ using namespace HomeCompa;
 
 int main(int argc, char* argv[])
 {
+	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
+	QApplication app(argc, argv);
+	QCoreApplication::setApplicationName(PRODUCT_ID);
+	QCoreApplication::setApplicationVersion(PRODUCT_VERSION);
+
+	const auto              defaultLogPath = QString("%1/%2.%3.log").arg(QDir::tempPath(), COMPANY_ID, PRODUCT_ID);
+	Log::LoggingInitializer logging(defaultLogPath);
+
 	try
 	{
-		QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-
-		QApplication app(argc, argv);
-		QCoreApplication::setApplicationName(PRODUCT_ID);
-		QCoreApplication::setApplicationVersion(PRODUCT_VERSION);
-
-		const auto              defaultLogPath = QString("%1/%2.%3.log").arg(QDir::tempPath(), COMPANY_ID, PRODUCT_ID);
-		Log::LoggingInitializer logging(defaultLogPath);
-
 		PLOGI << "App started";
 		PLOGI << "Version: " << PRODUCT_VERSION;
 		PLOGI << "Commit hash: " << GIT_HASH;
@@ -37,6 +40,13 @@ int main(int argc, char* argv[])
 			DiInit(builder, container);
 		}
 		PLOGD << "DI-container created";
+
+		auto settings = container->resolve<ISettings>();
+		QApplication::setStyle(settings->Get("ui/Style", QString { "fusion" }));
+		QGuiApplication::styleHints()->setColorScheme(settings->Get("ui/ColorScheme", Qt::ColorScheme::Unknown));
+
+		if (!container->resolve<QSqlDatabase>())
+			throw std::invalid_argument("Cannot connect to database");
 
 		const auto mainWindow = container->resolve<QMainWindow>();
 		mainWindow->show();

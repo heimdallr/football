@@ -13,10 +13,11 @@ namespace HomeCompa::Football
 
 class MainWindow final : public QMainWindow
 {
+	Q_OBJECT
 	NON_COPY_MOVABLE(MainWindow)
 
 public:
-	MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent = nullptr);
+	MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent = nullptr);
 	~MainWindow() override;
 
 private:

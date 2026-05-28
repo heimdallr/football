@@ -1,34 +1,193 @@
 #include "champ.h"
 
+#include <QCoreApplication>
+#include <QSqlDatabase>
+#include <QSqlDriver>
+
+#include "fnd/IsOneOf.h"
+#include "fnd/ScopedCall.h"
+
+#include "SettingsConstant.h"
+#include "reader.h"
+
+using namespace HomeCompa;
 using namespace HomeCompa::Football;
 
 namespace
 {
 
-class Model final : public QAbstractTableModel
+using Role = ModelChamp::Role;
+
+constexpr auto CONTEXT = "ChampModel";
+
+constexpr const char* HEADERS[] {
+	QT_TRANSLATE_NOOP("ChampModel", "Date, time"), QT_TRANSLATE_NOOP("ChampModel", "Stage"), QT_TRANSLATE_NOOP("ChampModel", "Group"),
+	QT_TRANSLATE_NOOP("ChampModel", "Teams"),      QT_TRANSLATE_NOOP("ChampModel", "Score"), QT_TRANSLATE_NOOP("ChampModel", "City, stadium"),
+};
+
+struct Item
 {
-private: // QAbstractTableModel
-	int columnCount(const QModelIndex&) const override
-	{
-		return 2;
-	}
+	int       id;
+	QString   city;
+	QDateTime dateTime;
+	int       ordNum;
+	int       idStatus;
+	int       ranking;
+	QString   status;
+	QString   goalCount;
+	int       idTeam1, idTeam2;
+	QString   countries;
+	int       allExists;
+	int       idGroup;
+	QString   groupName;
 
-	int rowCount(const QModelIndex&) const override
+	QVariant Display(const int column) const
 	{
-		return 0;
-	}
-
-	QVariant data(const QModelIndex& /*index*/, int /*role*/) const override
-	{
+		switch (column)
+		{
+			case 0:
+				return dateTime.toString("dd.MM hh:mm");
+			case 1:
+				return status;
+			case 2:
+				return groupName;
+			case 3:
+				return countries;
+			case 4:
+				return goalCount;
+			case 5:
+				return city;
+			default:
+				break;
+		}
 		return {};
 	}
 };
 
+using Items = std::vector<Item>;
+
+Items ReadItems(const ISettings& settings, const QSqlDatabase& db)
+{
+	Items     items;
+	QSqlQuery query("select ID, CITY_NAME, PLAY_AT, ORD_NUM, ID_STATUS, RANKING, STATUS, GOAL_COUNT, ID_C1, ID_C2, COUNTRIES, ALL_EXISTS, ID_GROUP, GROUP_NAME from GET_MATCH(?)", db);
+	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY));
+	if (query.exec())
+		while (query.next())
+			items.emplace_back(ReadItem<Item>(query));
+
+	std::ranges::sort(items, {}, [](const auto& item) {
+		return item.ordNum;
+	});
+
+	return items;
 }
 
-ModelChamp::ModelChamp(QObject* parent)
+class Model final : public QAbstractTableModel
+{
+public:
+	Model(std::shared_ptr<const ISettings> settings, std::shared_ptr<QSqlDatabase> db)
+		: m_settings { std::move(settings) }
+		, m_db { std::move(db) }
+		, m_items { ReadItems(*m_settings, *m_db) }
+	{
+		auto* driver = m_db->driver();
+		driver->subscribeToNotification("match");
+		connect(driver, &QSqlDriver::notification, [this] {
+			const ScopedCall resetGuard(
+				[this] {
+					beginResetModel();
+				},
+				[this] {
+					endResetModel();
+				}
+			);
+			m_items = ReadItems(*m_settings, *m_db);
+		});
+	}
+
+private: // QAbstractTableModel
+	QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override
+	{
+		return role != Qt::DisplayRole       ? QAbstractTableModel::headerData(section, orientation, role)
+		     : orientation == Qt::Horizontal ? QVariant::fromValue(QCoreApplication::translate(CONTEXT, HEADERS[section]))
+		                                     : m_items[section].ordNum;
+	}
+
+	int columnCount(const QModelIndex&) const override
+	{
+		return static_cast<int>(std::size(HEADERS));
+	}
+
+	int rowCount(const QModelIndex& parent) const override
+	{
+		return parent.isValid() ? 0 : static_cast<int>(m_items.size());
+	}
+
+	QVariant data(const QModelIndex& index, const int role) const override
+	{
+		assert(index.isValid() && index.row() < rowCount({}));
+		const auto& item = m_items[index.row()];
+		switch (role)
+		{
+			case Qt::DisplayRole:
+				return item.Display(index.column());
+
+			case Qt::TextAlignmentRole:
+				return QVariant::fromValue((IsOneOf(index.column(), 0, 5) ? Qt::AlignLeft : Qt::AlignHCenter) | Qt::AlignVCenter);
+
+			case Role::TeamIds:
+				return QVariant::fromValue(std::make_pair(item.idTeam1, item.idTeam2));
+
+			default:
+				break;
+		}
+		return {};
+	}
+
+	bool setData(const QModelIndex& index, const QVariant& value, const int role) override
+	{
+		assert(index.isValid() && index.row() < rowCount({}));
+		const auto& item = m_items[index.row()];
+		switch (role)
+		{
+			case Role::SwitchMatchEndFlag:
+				return SwitchMatchEndFlag(item.id), true;
+
+			default:
+				break;
+		}
+
+		return QAbstractTableModel::setData(index, value, role);
+	}
+
+	void SwitchMatchEndFlag(const int id)
+	{
+		const ScopedCall transactionGuard(
+			[this] {
+				m_db->transaction();
+			},
+			[this] {
+				m_db->commit();
+			}
+		);
+
+		QSqlQuery query("execute procedure SWITCH_MATCH_READY(?)");
+		query.bindValue(0, id);
+		query.exec();
+	}
+
+private:
+	std::shared_ptr<const ISettings>                 m_settings;
+	PropagateConstPtr<QSqlDatabase, std::shared_ptr> m_db;
+
+	Items m_items;
+};
+
+} // namespace
+
+ModelChamp::ModelChamp(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, QObject* parent)
 	: QIdentityProxyModel(parent)
-	, m_sourceModel { std::unique_ptr<QAbstractItemModel> { std::make_unique<Model>() } }
+	, m_sourceModel { std::unique_ptr<QAbstractItemModel> { std::make_unique<Model>(std::move(settings), std::move(db)) } }
 {
 	QIdentityProxyModel::setSourceModel(m_sourceModel.get());
 }

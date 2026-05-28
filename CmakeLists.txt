@@ -65,8 +65,8 @@ add_definitions(
 	-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 	${WINVER}
 )
-set(QtModules Core Gui Widgets)
-set(QtPlugins QSvgIcon QWindowsIntegration QModernWindowsStyle)
+set(QtModules Core Gui Widgets Sql)
+set(QtPlugins QSvgIcon QWindowsIntegration QModernWindowsStyle QIBaseDriver)
 
 find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS ${QtModules})
 find_package(plog REQUIRED)
@@ -84,7 +84,7 @@ CopyAndInstallICU()
 CopyAndInstallQtModules(${QtModules})
 CopyAndInstallQtPlugins(${QtPlugins})
 
-include_directories(${FOUNDATION_ROOT} src/ext/Hypodermic)
+include_directories(${FOUNDATION_ROOT} ${EXT_ROOT}/Hypodermic)
 
 include(${FOUNDATION_ROOT}/fnd/fnd.cmake)
 include(${FOUNDATION_ROOT}/logging/logging.cmake)

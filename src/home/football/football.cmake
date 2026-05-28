@@ -5,6 +5,7 @@ AddTarget(${PROJECT_NAME} app
 		Boost::headers
 		Qt${QT_MAJOR_VERSION}::Core
 		Qt${QT_MAJOR_VERSION}::Gui
+		Qt${QT_MAJOR_VERSION}::Sql
 		Qt${QT_MAJOR_VERSION}::Widgets
 	LINK_TARGETS
 		logging
