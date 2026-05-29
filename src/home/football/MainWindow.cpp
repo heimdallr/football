@@ -2,8 +2,11 @@
 
 #include "MainWindow.h"
 
+#include <QDateTime>
+#include <QLabel>
 #include <QMenu>
 #include <QSqlQuery>
+#include <QStatusBar>
 #include <QTimer>
 
 #include <config/version.h>
@@ -27,9 +30,9 @@ constexpr auto FONT_SIZE_DEFAULT = 9;
 
 QString GetChampInfo(const ISettings& settings, const SqlDatabase& db)
 {
-	if (auto query = db.CreateQuery("select info from get_champ_info(?)"); query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY)), query.exec() && query.next())
-		return query.value(0).toString();
-	return {};
+	auto query = db.CreateQuery("select info from get_champ_info(?)");
+	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY));
+	return query.exec() && query.next() ? query.value(0).toString() : QString {};
 }
 
 } // namespace
@@ -52,6 +55,7 @@ public:
 		, m_champInfo { GetChampInfo(*m_settings, *m_db) }
 	{
 		m_ui.setupUi(&m_self);
+		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown });
 
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
@@ -108,13 +112,29 @@ public:
 
 		SetTitle(m_champInfo);
 
-		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown });
+		m_self.statusBar()->addPermanentWidget(m_timeLabel);
+		auto timer = new QTimer(&m_self);
+		timer->setInterval(std::chrono::milliseconds(100));
+		timer->setSingleShot(false);
+		timer->start();
+		connect(timer, &QTimer::timeout, [this] {
+			m_timeLabel->setText(QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss"));
+		});
 	}
 
 	~Impl() override
 	{
 		SaveGeometry();
 		m_settings->Set(CHAMP_HEADER_KEY, m_ui.viewChamp->horizontalHeader()->saveState());
+	}
+
+private:
+	void OnFontChanged(const QFont&) override
+	{
+		auto font = m_timeLabel->font();
+		font.setPointSizeF(3 * font.pointSizeF() / 4);
+		m_self.statusBar()->setFont(font);
+		m_timeLabel->setFont(font);
 	}
 
 private:
@@ -176,6 +196,8 @@ private:
 	PropagateConstPtr<SqlDatabase, std::shared_ptr>        m_db;
 	PropagateConstPtr<QAbstractItemModel, std::shared_ptr> m_modelChamp;
 	PropagateConstPtr<Match, std::shared_ptr>              m_match;
+
+	QLabel* m_timeLabel { new QLabel };
 
 	QString m_champInfo;
 
