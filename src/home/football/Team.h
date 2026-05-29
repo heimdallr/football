@@ -5,12 +5,12 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
-class QSqlDatabase;
-
 namespace HomeCompa::Football
 {
 
-	struct MatchTeamInfo
+class SqlDatabase;
+
+struct MatchTeamInfo
 {
 	QString name;
 	int     goalCount;
@@ -26,12 +26,15 @@ public:
 	explicit Team(QWidget* parent = nullptr);
 	~Team() override;
 
-	void Setup(std::shared_ptr<QSqlDatabase> db);
+	void          Setup(std::shared_ptr<SqlDatabase> db);
 	MatchTeamInfo SetTeam(int idTeam);
+
+	void AddPlayer();
+	void RemovePlayer();
 
 private:
 	class Impl;
 	PropagateConstPtr<Impl> m_impl;
 };
 
-}
+} // namespace HomeCompa::Football

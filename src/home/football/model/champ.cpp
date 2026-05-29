@@ -1,13 +1,13 @@
 #include "champ.h"
 
 #include <QCoreApplication>
-#include <QSqlDatabase>
 #include <QSqlDriver>
 
 #include "fnd/IsOneOf.h"
 #include "fnd/ScopedCall.h"
 
 #include "SettingsConstant.h"
+#include "SqlDatabase.h"
 #include "reader.h"
 
 using namespace HomeCompa;
@@ -66,10 +66,10 @@ struct Item
 
 using Items = std::vector<Item>;
 
-Items ReadItems(const ISettings& settings, const QSqlDatabase& db)
+Items ReadItems(const ISettings& settings, const SqlDatabase& db)
 {
-	Items     items;
-	QSqlQuery query("select ID, CITY_NAME, PLAY_AT, ORD_NUM, ID_STATUS, RANKING, STATUS, GOAL_COUNT, ID_C1, ID_C2, COUNTRIES, ALL_EXISTS, ID_GROUP, GROUP_NAME from GET_MATCH(?)", db);
+	Items items;
+	auto  query = db.CreateQuery("select ID, CITY_NAME, PLAY_AT, ORD_NUM, ID_STATUS, RANKING, STATUS, GOAL_COUNT, ID_C1, ID_C2, COUNTRIES, ALL_EXISTS, ID_GROUP, GROUP_NAME from GET_MATCH(?)");
 	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY));
 	if (query.exec())
 		while (query.next())
@@ -85,14 +85,11 @@ Items ReadItems(const ISettings& settings, const QSqlDatabase& db)
 class Model final : public QAbstractTableModel
 {
 public:
-	Model(std::shared_ptr<const ISettings> settings, std::shared_ptr<QSqlDatabase> db)
+	Model(std::shared_ptr<const ISettings> settings, std::shared_ptr<SqlDatabase> db)
 		: m_settings { std::move(settings) }
 		, m_db { std::move(db) }
 		, m_items { ReadItems(*m_settings, *m_db) }
-	{
-		auto* driver = m_db->driver();
-		driver->subscribeToNotification("match");
-		connect(driver, &QSqlDriver::notification, [this] {
+		, m_subscription { m_db->Subscribe("match", [this] {
 			const ScopedCall resetGuard(
 				[this] {
 					beginResetModel();
@@ -102,7 +99,8 @@ public:
 				}
 			);
 			m_items = ReadItems(*m_settings, *m_db);
-		});
+		}) }
+	{
 	}
 
 private: // QAbstractTableModel
@@ -162,14 +160,7 @@ private: // QAbstractTableModel
 
 	void SwitchMatchEndFlag(const int id)
 	{
-		const ScopedCall transactionGuard(
-			[this] {
-				m_db->transaction();
-			},
-			[this] {
-				m_db->commit();
-			}
-		);
+		const auto tr = m_db->StartTransaction();
 
 		QSqlQuery query("execute procedure SWITCH_MATCH_READY(?)");
 		query.bindValue(0, id);
@@ -177,15 +168,17 @@ private: // QAbstractTableModel
 	}
 
 private:
-	std::shared_ptr<const ISettings>                 m_settings;
-	PropagateConstPtr<QSqlDatabase, std::shared_ptr> m_db;
+	std::shared_ptr<const ISettings>                m_settings;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
 
 	Items m_items;
+
+	SqlDatabase::SubscriptionWrapper::Ptr m_subscription;
 };
 
 } // namespace
 
-ModelChamp::ModelChamp(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, QObject* parent)
+ModelChamp::ModelChamp(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, QObject* parent)
 	: QIdentityProxyModel(parent)
 	, m_sourceModel { std::unique_ptr<QAbstractItemModel> { std::make_unique<Model>(std::move(settings), std::move(db)) } }
 {

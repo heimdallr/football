@@ -5,6 +5,7 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
+#include "SqlDatabase.h"
 #include "model/champ.h"
 #include "settings/ISettings.h"
 
@@ -17,7 +18,7 @@ class MainWindow final : public QMainWindow
 	NON_COPY_MOVABLE(MainWindow)
 
 public:
-	MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent = nullptr);
+	MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent = nullptr);
 	~MainWindow() override;
 
 private:

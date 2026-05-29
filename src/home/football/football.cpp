@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QDir>
 #include <QMainWindow>
-#include <QSqlDatabase>
 #include <QStyleHints>
 
 #include "Hypodermic/Hypodermic.h"
@@ -44,9 +43,6 @@ int main(int argc, char* argv[])
 		auto settings = container->resolve<ISettings>();
 		QApplication::setStyle(settings->Get("ui/Style", QString { "fusion" }));
 		QGuiApplication::styleHints()->setColorScheme(settings->Get("ui/ColorScheme", Qt::ColorScheme::Unknown));
-
-		if (!container->resolve<QSqlDatabase>())
-			throw std::invalid_argument("Cannot connect to database");
 
 		const auto mainWindow = container->resolve<QMainWindow>();
 		mainWindow->show();

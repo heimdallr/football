@@ -46,7 +46,7 @@
         <item>
          <widget class="QTableView" name="viewChamp">
           <property name="contextMenuPolicy">
-           <enum>Qt::ContextMenuPolicy::ActionsContextMenu</enum>
+           <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
           </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
@@ -110,6 +110,28 @@
    </property>
    <property name="shortcut">
     <string>Shift+Esc</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionFontSizeUp">
+   <property name="text">
+    <string>&amp;Increase font size</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Up</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionFontSizeDown">
+   <property name="text">
+    <string>&amp;Decrease font size</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Down</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>

@@ -2,9 +2,14 @@
 
 #include "Team.h"
 
+#include <QMenu>
+#include <QSqlDriver>
+
 #include "model/reader.h"
 #include "model/team.h"
 #include "utilgui/MultiHeaderView.h"
+
+#include "SqlDatabase.h"
 
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
@@ -21,6 +26,45 @@ constexpr auto TYPE    = QT_TRANSLATE_NOOP("Team", "Type");
 constexpr auto GOAL    = QT_TRANSLATE_NOOP("Team", "Goal");
 constexpr auto COUNT   = QT_TRANSLATE_NOOP("Team", "Count");
 constexpr auto MINUTE  = QT_TRANSLATE_NOOP("Team", "Minute");
+
+constexpr auto GOAL_MENU        = QT_TRANSLATE_NOOP("Team", "GOAAAAAL!!");
+constexpr auto SUBSTITUTE       = QT_TRANSLATE_NOOP("Team", "Substitute");
+constexpr auto CARD             = QT_TRANSLATE_NOOP("Team", "Card");
+constexpr auto ADD_PLAYER       = QT_TRANSLATE_NOOP("Team", "Add to the starting lineup");
+constexpr auto REMOVE_PLAYER    = QT_TRANSLATE_NOOP("Team", "Remove from the list");
+constexpr auto PLAYER_COUNT     = QT_TRANSLATE_NOOP("Team", "Players: %1");
+constexpr auto SUBSTITUTE_COUNT = QT_TRANSLATE_NOOP("Team", "Substitutes: %1");
+
+struct DictionaryItem
+{
+	int     id;
+	QString name;
+};
+
+using Dictionary = std::vector<DictionaryItem>;
+
+Dictionary SelectDictionary(const SqlDatabase& db, const QString& source)
+{
+	auto query = db.CreateQuery(QString("select id, name from get_%1_type").arg(source));
+	query.exec();
+
+	Dictionary dictionary;
+	while (query.next())
+		dictionary.emplace_back(ReadItem<DictionaryItem>(query));
+
+	return dictionary;
+}
+
+template <typename F>
+void AddContextSubMenu(QMenu& menu, const QString& title, const Dictionary& dictionary, const F& f)
+{
+	auto* subMenu = menu.addMenu(title);
+	subMenu->setFont(menu.font());
+	for (const auto& [id, name] : dictionary)
+		subMenu->addAction(name, [id, f] {
+			f(id);
+		});
+}
 
 QString Tr(const char* str)
 {
@@ -49,8 +93,8 @@ void AddHeader(QAbstractItemModel& model, QTableView& view)
 
 	const auto s = header->sectionSizeFromContents(0).height();
 	header->resizeSection(0, s);
-	header->resizeSection(3, 2 * s);
-	header->resizeSection(4, 2 * s);
+	header->resizeSection(3, 5 * s / 2);
+	header->resizeSection(4, 5 * s / 2);
 
 	header->setSectionResizeMode(0, QHeaderView::Fixed);
 	header->setSectionResizeMode(1, QHeaderView::Stretch);
@@ -68,9 +112,16 @@ public:
 		: m_self { self }
 	{
 		m_ui.setupUi(&m_self);
+
+		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, [this] {
+			OnPlayersContextMenuRequested();
+		});
+		connect(m_ui.viewSubstitutes, &QWidget::customContextMenuRequested, [this] {
+			OnSubstitutesContextMenuRequested();
+		});
 	}
 
-	void Setup(std::shared_ptr<QSqlDatabase> db)
+	void Setup(std::shared_ptr<SqlDatabase> db)
 	{
 		auto  model       = std::make_unique<ModelTeam>(db);
 		auto* sourceModel = model->sourceModel();
@@ -85,26 +136,168 @@ public:
 
 	MatchTeamInfo SetTeam(const int idTeam)
 	{
-		m_modelPlayers->setData({}, idTeam, ModelTeam::Role::TeamId);
-
-		QSqlQuery query("select NAME, GOAL_COUNT, PENALTY_COUNT from GET_MATCH_COUNTRY_INFO(?)", *m_db);
+		auto query = m_db->CreateQuery("select NAME, GOAL_COUNT, PENALTY_COUNT from GET_MATCH_COUNTRY_INFO(?)");
 		query.bindValue(0, idTeam);
 		query.exec();
 		query.next();
 
 		auto result = ReadItem<MatchTeamInfo>(query);
 
-		m_ui.teamName->setText(result.name);
+		if (!m_currentTeamId || *m_currentTeamId != idTeam)
+		{
+			m_currentTeamId = idTeam;
+			UpdatePlayersInfo();
+			m_ui.teamName->setText(result.name);
+			m_subscription = m_db->Subscribe(QString("match_player_%1").arg(idTeam), [this] {
+				UpdatePlayersInfo();
+			});
+		}
 
 		return result;
+	}
+
+	void OnAddPlayerTriggered()
+	{
+		const auto currentIndex = m_ui.viewSubstitutes->currentIndex();
+		if (!currentIndex.isValid() || !currentIndex.data(ModelTeam::Role::Number).isValid() || m_modelSubstitutes->data({}, ModelTeam::Role::PlayerCount).toULongLong() >= 11)
+			return;
+
+		assert(m_currentTeamId);
+		const auto transaction = m_db->StartTransaction();
+		auto       query       = m_db->CreateQuery("select id from add_match_player(?, ?)");
+		query.bindValue(0, *m_currentTeamId);
+		query.bindValue(1, currentIndex.data(ModelTeam::Role::ChampId));
+		query.exec();
+		query.next();
+	}
+
+	void OnRemovePlayerTriggered()
+	{
+		if (!m_ui.viewPlayers->currentIndex().isValid())
+			return;
+
+		const auto transaction = m_db->StartTransaction();
+		auto       query       = m_db->CreateQuery("execute procedure del_match_player(?)");
+		query.bindValue(0, m_ui.viewPlayers->currentIndex().data(ModelTeam::Role::MatchId));
+		query.exec();
+	}
+
+private:
+	void UpdatePlayersInfo()
+	{
+		m_modelPlayers->setData({}, *m_currentTeamId, ModelTeam::Role::TeamId);
+
+		if (const auto count = m_modelPlayers->data({}, ModelTeam::Role::PlayerCount).toULongLong(); count > 0 && count < 11)
+			m_ui.playerCount->setText(Tr(PLAYER_COUNT).arg(count));
+		else
+			m_ui.playerCount->setText({});
+
+		if (const auto count = m_modelPlayers->data({}, ModelTeam::Role::SubstituteCount).toULongLong(); count > 0)
+			m_ui.substituteCount->setText(Tr(SUBSTITUTE_COUNT).arg(count));
+		else
+			m_ui.substituteCount->setText({});
+	}
+
+	void OnPlayersContextMenuRequested()
+	{
+		const auto currentIndex = m_ui.viewPlayers->currentIndex();
+		if (!currentIndex.isValid())
+			return;
+
+		UpdateDictionaries();
+		QMenu menu;
+		menu.setFont(m_self.font());
+
+		AddContextSubMenu(menu, Tr(GOAL_MENU), m_goals, [this](const int id) {
+			OnGoalTriggered(id);
+		});
+		menu.addAction(Tr(SUBSTITUTE), [this] {
+			OnSubstituteTriggered();
+		});
+		AddContextSubMenu(menu, Tr(CARD), m_cards, [this](const int id) {
+			OnCardTriggered(*m_ui.viewPlayers, id);
+		});
+		menu.addSeparator();
+		menu.addAction(
+				Tr(REMOVE_PLAYER),
+				[this] {
+					OnRemovePlayerTriggered();
+				}
+		)->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Delete));
+		menu.exec(QCursor::pos());
+	}
+
+	void OnSubstitutesContextMenuRequested()
+	{
+		const auto currentIndex = m_ui.viewSubstitutes->currentIndex();
+		if (!currentIndex.isValid())
+			return;
+
+		const auto hasNumber = currentIndex.data(ModelTeam::Role::Number).isValid();
+
+		UpdateDictionaries();
+		QMenu menu;
+		menu.setFont(m_self.font());
+
+		if (auto* action = menu.addAction(Tr(ADD_PLAYER), [this] {
+				OnAddPlayerTriggered();
+			}))
+		{
+			if (hasNumber && m_modelSubstitutes->data({}, ModelTeam::Role::PlayerCount).toULongLong() < 11)
+				action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return));
+			else
+				action->setEnabled(false);
+		}
+
+		AddContextSubMenu(menu, Tr(CARD), m_cards, [this](const int id) {
+			OnCardTriggered(*m_ui.viewSubstitutes, id);
+		});
+
+		if (auto* action = menu.addAction(
+				Tr(SUBSTITUTE),
+				[this] {
+					OnSubstituteTriggered();
+				}
+			);
+		    !hasNumber)
+			action->setEnabled(false);
+
+		menu.exec(QCursor::pos());
+	}
+
+	void OnGoalTriggered(const int /*id*/)
+	{
+	}
+
+	void OnCardTriggered(QAbstractItemView& /*view*/, const int /*id*/)
+	{
+	}
+
+	void OnSubstituteTriggered()
+	{
+	}
+
+	void UpdateDictionaries()
+	{
+		if (!m_cards.empty())
+			return;
+
+		m_cards = SelectDictionary(*m_db, "CARD");
+		m_goals = SelectDictionary(*m_db, "GOAL");
 	}
 
 private:
 	Team& m_self;
 
-	PropagateConstPtr<QSqlDatabase, std::shared_ptr> m_db { std::shared_ptr<QSqlDatabase> {} };
-	PropagateConstPtr<QAbstractItemModel>            m_modelPlayers { std::unique_ptr<QAbstractItemModel> {} };
-	PropagateConstPtr<QAbstractItemModel>            m_modelSubstitutes { std::unique_ptr<QAbstractItemModel> {} };
+	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db { std::shared_ptr<SqlDatabase> {} };
+	PropagateConstPtr<QAbstractItemModel>           m_modelPlayers { std::unique_ptr<QAbstractItemModel> {} };
+	PropagateConstPtr<QAbstractItemModel>           m_modelSubstitutes { std::unique_ptr<QAbstractItemModel> {} };
+
+	Dictionary m_cards;
+	Dictionary m_goals;
+
+	std::optional<int>                    m_currentTeamId;
+	SqlDatabase::SubscriptionWrapper::Ptr m_subscription;
 
 	Ui::Team m_ui;
 };
@@ -117,7 +310,7 @@ Team::Team(QWidget* parent)
 
 Team::~Team() = default;
 
-void Team::Setup(std::shared_ptr<QSqlDatabase> db)
+void Team::Setup(std::shared_ptr<SqlDatabase> db)
 {
 	m_impl->Setup(std::move(db));
 }
@@ -125,4 +318,14 @@ void Team::Setup(std::shared_ptr<QSqlDatabase> db)
 MatchTeamInfo Team::SetTeam(const int idTeam)
 {
 	return m_impl->SetTeam(idTeam);
+}
+
+void Team::AddPlayer()
+{
+	m_impl->OnAddPlayerTriggered();
+}
+
+void Team::RemovePlayer()
+{
+	m_impl->OnRemovePlayerTriggered();
 }

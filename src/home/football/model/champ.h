@@ -1,12 +1,13 @@
 #pragma once
 
 #include <QIdentityProxyModel>
-#include <QSqlDatabase>
 
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
 #include "settings/ISettings.h"
+
+#include "SqlDatabase.h"
 
 namespace HomeCompa::Football
 {
@@ -26,7 +27,7 @@ public:
 	};
 
 public:
-	ModelChamp(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, QObject* parent = nullptr);
+	ModelChamp(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, QObject* parent = nullptr);
 	~ModelChamp() override;
 
 private:

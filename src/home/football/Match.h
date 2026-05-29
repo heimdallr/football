@@ -5,11 +5,10 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
-class QSqlDatabase;
-
 namespace HomeCompa::Football
 {
 
+class SqlDatabase;
 struct MatchTeamInfo;
 
 class Match final : public QWidget
@@ -21,7 +20,7 @@ public:
 	explicit Match(QWidget* parent = nullptr);
 	~Match() override;
 
-	void Setup(std::shared_ptr<QSqlDatabase> db) const;
+	void Setup(std::shared_ptr<SqlDatabase> db) const;
 	std::pair<MatchTeamInfo, MatchTeamInfo> SetTeams(int idTeam1, int idTeam2) const;
 
 private:

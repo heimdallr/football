@@ -1,10 +1,12 @@
 #include "team.h"
 
 #include <QColor>
+#include <QFont>
 
 #include "fnd/IsOneOf.h"
 #include "fnd/ScopedCall.h"
 
+#include "SqlDatabase.h"
 #include "reader.h"
 
 using namespace HomeCompa::Football;
@@ -78,6 +80,16 @@ struct Item
 
 		return {};
 	}
+
+	QVariant Font() const
+	{
+		if (ordNum < 10000)
+			return {};
+
+		QFont font;
+		font.setItalic(true);
+		return font;
+	}
 };
 
 using Items = std::vector<Item>;
@@ -85,7 +97,7 @@ using Items = std::vector<Item>;
 class Model final : public QAbstractTableModel
 {
 public:
-	Model(std::shared_ptr<QSqlDatabase> db)
+	Model(std::shared_ptr<SqlDatabase> db)
 		: m_db { std::move(db) }
 	{
 	}
@@ -102,6 +114,17 @@ private: // QAbstractTableModel
 	}
 
 	QVariant data(const QModelIndex& index, const int role) const override
+	{
+		return index.isValid() ? GetData(index, role) : GetData(role);
+	}
+
+	bool setData(const QModelIndex& index, const QVariant& value, const int role) override
+	{
+		return index.isValid() ? SetData(index, value, role) : SetData(value, role);
+	}
+
+private:
+	QVariant GetData(const QModelIndex& index, const int role) const
 	{
 		assert(index.isValid() && index.row() < rowCount({}));
 		const auto& item = m_items[index.row()];
@@ -123,11 +146,20 @@ private: // QAbstractTableModel
 
 				return {};
 
+			case Qt::FontRole:
+				return item.Font();
+
 			case Role::MatchId:
 				return item.matchId;
 
 			case Role::SubstituteMinute:
 				return item.substituteMinute;
+
+			case Role::ChampId:
+				return item.champId;
+
+			case Role::Number:
+				return item.number ? item.number : QVariant {};
 
 			default:
 				break;
@@ -135,12 +167,27 @@ private: // QAbstractTableModel
 		return {};
 	}
 
-	bool setData(const QModelIndex& index, const QVariant& value, const int role) override
+	QVariant GetData(const int role) const
 	{
-		return index.isValid() ? SetData(index, value, role) : SetData(value, role);
+		switch (role)
+		{
+			case Role::PlayerCount:
+				return std::ranges::count_if(m_items, [](const auto& item) {
+					return item.matchId > 0;
+				});
+
+			case Role::SubstituteCount:
+				return std::ranges::count_if(m_items, [](const auto& item) {
+					return item.substituteMinute > 0;
+				});
+
+			default:
+				break;
+		}
+
+		return assert(false && "unexpected role"), QVariant{};
 	}
 
-private:
 	bool SetData(const QModelIndex& index, const QVariant& value, const int role)
 	{
 		return QAbstractTableModel::setData(index, value, role);
@@ -163,7 +210,8 @@ private:
 	{
 		Items items;
 
-		QSqlQuery query("select ORD_NUM, NUMBER, NAME, PLAYER_TYPE, ID_CHAMP_PLAYER, ID_MATCH_PLAYER, SUBST_MIN, GOAL_COUNT, GOAL_MINUTE, CARD_COLOR, BIRTHDAY, PLAYER_COLOR from GET_MATCH_PLAYER(?)", *m_db);
+		auto query =
+			m_db->CreateQuery("select ORD_NUM, NUMBER, NAME, PLAYER_TYPE, ID_CHAMP_PLAYER, ID_MATCH_PLAYER, SUBST_MIN, GOAL_COUNT, GOAL_MINUTE, CARD_COLOR, BIRTHDAY, PLAYER_COLOR from GET_MATCH_PLAYER(?)");
 		query.bindValue(0, teamId);
 		if (query.exec())
 			while (query.next())
@@ -186,14 +234,14 @@ private:
 	}
 
 private:
-	PropagateConstPtr<QSqlDatabase, std::shared_ptr> m_db;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
 
 	Items m_items;
 };
 
 } // namespace
 
-ModelTeam::ModelTeam(std::shared_ptr<QSqlDatabase> db, QObject* parent)
+ModelTeam::ModelTeam(std::shared_ptr<SqlDatabase> db, QObject* parent)
 	: QSortFilterProxyModel(parent)
 	, m_sourceModel { std::unique_ptr<QAbstractItemModel> { std::make_unique<Model>(std::move(db)) } }
 {

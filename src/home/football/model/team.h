@@ -5,10 +5,10 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
-class QSqlDatabase;
-
 namespace HomeCompa::Football
 {
+
+class SqlDatabase;
 
 class ModelTeam final : public QSortFilterProxyModel
 {
@@ -22,11 +22,15 @@ public:
 			TeamId = Qt::UserRole + 1,
 			MatchId,
 			SubstituteMinute,
+			ChampId,
+			Number,
+			PlayerCount,
+			SubstituteCount,
 		};
 	};
 
 public:
-	explicit ModelTeam(std::shared_ptr<QSqlDatabase> db, QObject* parent = nullptr);
+	explicit ModelTeam(std::shared_ptr<SqlDatabase> db, QObject* parent = nullptr);
 	explicit ModelTeam(QAbstractItemModel* sourceModel, QObject* parent = nullptr);
 	~ModelTeam() override;
 

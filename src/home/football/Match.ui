@@ -33,6 +33,28 @@
     <widget class="HomeCompa::Football::Team" name="team2" native="true"/>
    </item>
   </layout>
+  <action name="actionAddPlayer">
+   <property name="text">
+    <string>&amp;Add to the starting lineup</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Return</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionRemovePlayer">
+   <property name="text">
+    <string>&amp;Remove from the list</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Del</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

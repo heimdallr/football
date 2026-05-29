@@ -2,6 +2,7 @@
 
 #include "MainWindow.h"
 
+#include <QMenu>
 #include <QSqlQuery>
 
 #include <config/version.h>
@@ -17,11 +18,15 @@ using namespace HomeCompa;
 namespace
 {
 
-constexpr auto MAIN_WINDOW = "MainWindow";
+constexpr auto MAIN_WINDOW      = "MainWindow";
+constexpr auto FONT_SIZE_KEY    = "ui/Font/pointSizeF";
+constexpr auto CHAMP_HEADER_KEY = "ui/ChampHeaderView/layout";
 
-QString GetChampInfo(const ISettings& settings, const QSqlDatabase& db)
+constexpr auto FONT_SIZE_DEFAULT = 9;
+
+QString GetChampInfo(const ISettings& settings, const SqlDatabase& db)
 {
-	if (QSqlQuery query("select info from get_champ_info(?)", db); query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY)), query.exec() && query.next())
+	if (auto query = db.CreateQuery("select info from get_champ_info(?)"); query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY)), query.exec() && query.next())
 		return query.value(0).toString();
 	return {};
 }
@@ -35,7 +40,7 @@ class MainWindow::Impl final
 	NON_COPY_MOVABLE(Impl)
 
 public:
-	Impl(MainWindow& self, std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp)
+	Impl(MainWindow& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp)
 		: GeometryRestorable(*this, settings, MAIN_WINDOW)
 		, GeometryRestorableObserver(self)
 		, m_self { self }
@@ -66,17 +71,33 @@ public:
 		connect(m_ui.actionMatchDetails, &QAction::triggered, [this] {
 			m_ui.stackedWidget->setCurrentIndex(1);
 		});
+		const auto incrementFontSize = [&](const int value) {
+			const auto fontSize = m_settings->Get(FONT_SIZE_KEY, FONT_SIZE_DEFAULT);
+			m_settings->Set(FONT_SIZE_KEY, fontSize + value);
+		};
+		connect(m_ui.actionFontSizeUp, &QAction::triggered, &m_self, [=] {
+			incrementFontSize(1);
+		});
+		connect(m_ui.actionFontSizeDown, &QAction::triggered, &m_self, [=] {
+			incrementFontSize(-1);
+		});
+		connect(m_ui.viewChamp, &QWidget::customContextMenuRequested, [this] {
+			OnViewChampContextMenuRequested();
+		});
 
 		LoadGeometry();
+		if (const auto viewChampLayout = m_settings->Get(CHAMP_HEADER_KEY); viewChampLayout.isValid())
+			m_ui.viewChamp->horizontalHeader()->restoreState(viewChampLayout.toByteArray());
 
 		SetTitle(m_champInfo);
 
-		m_self.addActions({ m_ui.actionExit, m_ui.actionHome });
+		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown });
 	}
 
 	~Impl() override
 	{
 		SaveGeometry();
+		m_settings->Set(CHAMP_HEADER_KEY, m_ui.viewChamp->horizontalHeader()->saveState());
 	}
 
 private:
@@ -124,11 +145,20 @@ private:
 		m_self.setWindowTitle(QString("%1 - [%2]").arg(PRODUCT_ID, title));
 	}
 
+	void OnViewChampContextMenuRequested()
+	{
+		QMenu menu;
+		menu.setFont(m_self.font());
+		menu.addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag });
+		menu.addSeparator();
+		menu.exec(QCursor::pos());
+	}
+
 private:
 	MainWindow& m_self;
 
 	PropagateConstPtr<ISettings, std::shared_ptr>          m_settings;
-	PropagateConstPtr<QSqlDatabase, std::shared_ptr>       m_db;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr>        m_db;
 	PropagateConstPtr<QAbstractItemModel, std::shared_ptr> m_modelChamp;
 
 	QString m_champInfo;
@@ -136,7 +166,7 @@ private:
 	Ui::MainWindow m_ui {};
 };
 
-MainWindow::MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<QSqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent)
+MainWindow::MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, QWidget* parent)
 	: QMainWindow(parent)
 	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp))
 {
