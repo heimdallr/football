@@ -119,6 +119,13 @@ std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, co
 	inputDialog.setFont(parent.font());
 	inputDialog.setWindowTitle(Tr(GET_MINUTE_TITLE));
 	inputDialog.setLabelText(Tr(GET_MINUTE_LABEL));
+	inputDialog.setInputMode(QInputDialog::TextInput);
+
+	QRegularExpression rx(R"(([0-9]{1,3})(\+[0-9]{1,2})?)");
+
+	auto* lineEdit = inputDialog.findChild<QLineEdit*>();
+	assert(lineEdit);
+	lineEdit->setValidator(new QRegularExpressionValidator(rx, &inputDialog));
 
 	QObject::connect(&inputDialog, &QDialog::finished, &inputDialog, [&] {
 		settings.Set(INPUT_DIALOG_GEOMETRY_KEY, inputDialog.geometry());
@@ -131,7 +138,17 @@ std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, co
 	if (inputDialog.exec() != QDialog::Accepted)
 		return {};
 
-	return {};
+	const auto match = rx.match(inputDialog.textValue());
+	if (!match.hasMatch())
+		return {};
+
+	const auto minute = match.captured(1);
+	if (minute.isEmpty())
+		return {};
+
+	const auto additional = match.captured(2);
+
+	return std::make_pair(QVariant { minute }, additional.isEmpty() ? QVariant {} : QVariant { additional.mid(1) });
 }
 
 } // namespace
