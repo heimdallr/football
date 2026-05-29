@@ -64,8 +64,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="HomeCompa::Football::Match" name="pageMatch"/>
-      <widget class="QWidget" name="pageGroup"/>
      </widget>
     </item>
    </layout>
@@ -139,14 +137,6 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>HomeCompa::Football::Match</class>
-   <extends>QWidget</extends>
-   <header>Match.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>

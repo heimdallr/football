@@ -9,6 +9,7 @@ AddTarget(${PROJECT_NAME} app
 		Qt${QT_MAJOR_VERSION}::Widgets
 	LINK_TARGETS
 		logging
+		platformgui
 		settings
 		utilgui
 )

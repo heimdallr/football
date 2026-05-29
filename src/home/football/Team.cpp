@@ -2,11 +2,14 @@
 
 #include "Team.h"
 
+#include <QInputDialog>
 #include <QMenu>
 #include <QSqlDriver>
+#include <QTimer>
 
 #include "model/reader.h"
 #include "model/team.h"
+#include "platformgui/PlatformGuiUtil.h"
 #include "utilgui/MultiHeaderView.h"
 
 #include "SqlDatabase.h"
@@ -16,6 +19,8 @@ using namespace HomeCompa;
 
 namespace
 {
+
+constexpr auto INPUT_DIALOG_GEOMETRY_KEY = "ui/MinuteInputDialog/geometry";
 
 constexpr auto CONTEXT = "Team";
 
@@ -34,6 +39,8 @@ constexpr auto ADD_PLAYER       = QT_TRANSLATE_NOOP("Team", "Add to the starting
 constexpr auto REMOVE_PLAYER    = QT_TRANSLATE_NOOP("Team", "Remove from the list");
 constexpr auto PLAYER_COUNT     = QT_TRANSLATE_NOOP("Team", "Players: %1");
 constexpr auto SUBSTITUTE_COUNT = QT_TRANSLATE_NOOP("Team", "Substitutes: %1");
+constexpr auto GET_MINUTE_TITLE = QT_TRANSLATE_NOOP("Team", "Enter the minute of the match");
+constexpr auto GET_MINUTE_LABEL = QT_TRANSLATE_NOOP("Team", "Minute of the match");
 
 struct DictionaryItem
 {
@@ -103,15 +110,46 @@ void AddHeader(QAbstractItemModel& model, QTableView& view)
 	header->setSectionResizeMode(4, QHeaderView::Fixed);
 }
 
+std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, const int defaultMinute = 0)
+{
+	if (defaultMinute)
+		return std::make_pair(QVariant { defaultMinute }, QVariant {});
+
+	QInputDialog inputDialog(&parent);
+	inputDialog.setFont(parent.font());
+	inputDialog.setWindowTitle(Tr(GET_MINUTE_TITLE));
+	inputDialog.setLabelText(Tr(GET_MINUTE_LABEL));
+
+	QObject::connect(&inputDialog, &QDialog::finished, &inputDialog, [&] {
+		settings.Set(INPUT_DIALOG_GEOMETRY_KEY, inputDialog.geometry());
+	});
+	QTimer::singleShot(0, [&] {
+		if (auto geometry = settings.Get(INPUT_DIALOG_GEOMETRY_KEY); geometry.isValid())
+			Platform::SetGeometry(inputDialog, geometry.toRect());
+	});
+
+	if (inputDialog.exec() != QDialog::Accepted)
+		return {};
+
+	return {};
+}
+
 } // namespace
 
 class Team::Impl
 {
 public:
-	explicit Impl(Team& self)
+	explicit Impl(Team& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db)
 		: m_self { self }
+		, m_settings { std::move(settings) }
+		, m_db { std::move(db) }
+		, m_modelPlayers { ModelTeam::Create(m_db) }
+		, m_modelSubstitutes { ModelTeam::Create(m_modelPlayers->data({}, ModelTeam::Role::SourceModel).value<QAbstractItemModel*>()) }
 	{
 		m_ui.setupUi(&m_self);
+
+		AddHeader(*m_modelPlayers, *m_ui.viewPlayers);
+		AddHeader(*m_modelSubstitutes, *m_ui.viewSubstitutes);
 
 		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, [this] {
 			OnPlayersContextMenuRequested();
@@ -121,39 +159,32 @@ public:
 		});
 	}
 
-	void Setup(std::shared_ptr<SqlDatabase> db)
-	{
-		auto  model       = std::make_unique<ModelTeam>(db);
-		auto* sourceModel = model->sourceModel();
-		m_modelPlayers.reset(std::move(model));
-		m_modelSubstitutes.reset(std::make_unique<ModelTeam>(sourceModel));
-
-		m_db.reset(std::move(db));
-
-		AddHeader(*m_modelPlayers, *m_ui.viewPlayers);
-		AddHeader(*m_modelSubstitutes, *m_ui.viewSubstitutes);
-	}
-
 	MatchTeamInfo SetTeam(const int idTeam)
 	{
-		auto query = m_db->CreateQuery("select NAME, GOAL_COUNT, PENALTY_COUNT from GET_MATCH_COUNTRY_INFO(?)");
-		query.bindValue(0, idTeam);
-		query.exec();
-		query.next();
-
-		auto result = ReadItem<MatchTeamInfo>(query);
-
 		if (!m_currentTeamId || *m_currentTeamId != idTeam)
 		{
 			m_currentTeamId = idTeam;
 			UpdatePlayersInfo();
-			m_ui.teamName->setText(result.name);
 			m_subscription = m_db->Subscribe(QString("match_player_%1").arg(idTeam), [this] {
 				UpdatePlayersInfo();
 			});
 		}
 
+		auto result = GetTeamInfo();
+		m_ui.teamName->setText(result.name);
+
 		return result;
+	}
+
+	MatchTeamInfo GetTeamInfo() const
+	{
+		assert(m_currentTeamId);
+		auto query = m_db->CreateQuery("select NAME, GOAL_COUNT, PENALTY_COUNT from GET_MATCH_COUNTRY_INFO(?)");
+		query.bindValue(0, *m_currentTeamId);
+		query.exec();
+		query.next();
+
+		return ReadItem<MatchTeamInfo>(query);
 	}
 
 	void OnAddPlayerTriggered()
@@ -265,8 +296,23 @@ private:
 		menu.exec(QCursor::pos());
 	}
 
-	void OnGoalTriggered(const int /*id*/)
+	void OnGoalTriggered(const int id)
 	{
+		const auto index = m_ui.viewPlayers->currentIndex();
+		assert(index.isValid());
+
+		const auto [minute, additional] = GetMinute(*m_settings, m_self, id % 1000);
+		if (!minute.isValid())
+			return;
+
+		const auto transaction = m_db->StartTransaction();
+		auto       query       = m_db->CreateQuery("select id from add_goal(?, ?, ?, ?)");
+		query.bindValue(0, index.data(ModelTeam::Role::MatchId));
+		query.bindValue(1, id / 1000);
+		query.bindValue(2, minute);
+		query.bindValue(3, additional);
+		query.exec();
+		query.next();
 	}
 
 	void OnCardTriggered(QAbstractItemView& /*view*/, const int /*id*/)
@@ -289,9 +335,10 @@ private:
 private:
 	Team& m_self;
 
-	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db { std::shared_ptr<SqlDatabase> {} };
-	PropagateConstPtr<QAbstractItemModel>           m_modelPlayers { std::unique_ptr<QAbstractItemModel> {} };
-	PropagateConstPtr<QAbstractItemModel>           m_modelSubstitutes { std::unique_ptr<QAbstractItemModel> {} };
+	PropagateConstPtr<ISettings, std::shared_ptr>   m_settings;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
+	PropagateConstPtr<QAbstractItemModel>           m_modelPlayers;
+	PropagateConstPtr<QAbstractItemModel>           m_modelSubstitutes;
 
 	Dictionary m_cards;
 	Dictionary m_goals;
@@ -302,22 +349,22 @@ private:
 	Ui::Team m_ui;
 };
 
-Team::Team(QWidget* parent)
+Team::Team(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, QWidget* parent)
 	: QWidget(parent)
-	, m_impl(*this)
+	, m_impl(*this, std::move(settings), std::move(db))
 {
 }
 
 Team::~Team() = default;
 
-void Team::Setup(std::shared_ptr<SqlDatabase> db)
-{
-	m_impl->Setup(std::move(db));
-}
-
 MatchTeamInfo Team::SetTeam(const int idTeam)
 {
 	return m_impl->SetTeam(idTeam);
+}
+
+MatchTeamInfo Team::GetInfo() const
+{
+	return m_impl->GetTeamInfo();
 }
 
 void Team::AddPlayer()

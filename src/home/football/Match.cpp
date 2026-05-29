@@ -2,6 +2,8 @@
 
 #include "Match.h"
 
+#include "SqlDatabase.h"
+
 using namespace HomeCompa::Football;
 
 namespace
@@ -18,11 +20,20 @@ bool HasFocus(const QWidget& widget)
 
 class Match::Impl
 {
+	NON_COPY_MOVABLE(Impl)
+
 public:
-	explicit Impl(Match& self)
+	explicit Impl(Match& self, std::shared_ptr<SqlDatabase> db, std::shared_ptr<Team> team1, std::shared_ptr<Team> team2)
 		: m_self { self }
+		, m_db { std::move(db) }
+		, m_team1 { std::move(team1) }
+		, m_team2 { std::move(team2) }
 	{
 		m_ui.setupUi(&m_self);
+
+		m_ui.layout->addWidget(m_team1.get());
+		m_ui.layout->addWidget(m_team2.get());
+
 		m_self.addActions({ m_ui.actionAddPlayer, m_ui.actionRemovePlayer });
 
 		connect(m_ui.actionAddPlayer, &QAction::triggered, [this] {
@@ -35,43 +46,52 @@ public:
 		});
 	}
 
-	void Setup(std::shared_ptr<SqlDatabase> db) const
+	~Impl()
 	{
-		m_ui.team1->Setup(db);
-		m_ui.team2->Setup(std::move(db));
+		m_ui.layout->removeWidget(m_team1.get());
+		m_ui.layout->removeWidget(m_team2.get());
 	}
 
-	std::pair<MatchTeamInfo, MatchTeamInfo> SetTeams(const int idTeam1, const int idTeam2) const
+	void SetTeams(const int idMatch, const int idTeam1, const int idTeam2)
 	{
-		return std::make_pair(m_ui.team1->SetTeam(idTeam1), m_ui.team2->SetTeam(idTeam2));
+		emit m_self.MatchTeamInfoChanged(std::make_pair(m_team1->SetTeam(idTeam1), m_team2->SetTeam(idTeam2)));
+
+		if (m_idMatch && *m_idMatch == idMatch)
+			return;
+
+		m_idMatch      = idMatch;
+		m_subscription = m_db->Subscribe(QString("match_%1").arg(idMatch), [this] {
+			emit m_self.MatchTeamInfoChanged(std::make_pair(m_team1->GetInfo(), m_team2->GetInfo()));
+		});
 	}
 
 private:
-	Team* GetActiveTeam() const
+	Team* GetActiveTeam()
 	{
-		return HasFocus(*m_ui.team1) ? m_ui.team1 : HasFocus(*m_ui.team2) ? m_ui.team2 : nullptr;
+		return HasFocus(*m_team1) ? m_team1.get() : HasFocus(*m_team2) ? m_team2.get() : nullptr;
 	}
 
 private:
 	Match& m_self;
 
+	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
+	PropagateConstPtr<Team, std::shared_ptr>        m_team1, m_team2;
+
+	std::optional<int>                    m_idMatch;
+	SqlDatabase::SubscriptionWrapper::Ptr m_subscription;
+
 	Ui::Match m_ui {};
 };
 
-Match::Match(QWidget* parent)
+Match::Match(std::shared_ptr<SqlDatabase> db, std::shared_ptr<Team> team1, std::shared_ptr<Team> team2, QWidget* parent)
 	: QWidget(parent)
-	, m_impl(*this)
+	, m_impl(*this, std::move(db), std::move(team1), std::move(team2))
 {
 }
 
 Match::~Match() = default;
 
-void Match::Setup(std::shared_ptr<SqlDatabase> db) const
+void Match::SetTeams(const int idMatch, const int idTeam1, const int idTeam2)
 {
-	m_impl->Setup(std::move(db));
-}
-
-std::pair<MatchTeamInfo, MatchTeamInfo> Match::SetTeams(const int idTeam1, const int idTeam2) const
-{
-	return m_impl->SetTeams(idTeam1, idTeam2);
+	m_impl->SetTeams(idMatch, idTeam1, idTeam2);
 }

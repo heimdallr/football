@@ -5,6 +5,11 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
+namespace HomeCompa
+{
+class ISettings;
+}
+
 namespace HomeCompa::Football
 {
 
@@ -23,11 +28,11 @@ class Team final : public QWidget
 	NON_COPY_MOVABLE(Team)
 
 public:
-	explicit Team(QWidget* parent = nullptr);
+	Team(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, QWidget* parent = nullptr);
 	~Team() override;
 
-	void          Setup(std::shared_ptr<SqlDatabase> db);
 	MatchTeamInfo SetTeam(int idTeam);
+	MatchTeamInfo GetInfo() const;
 
 	void AddPlayer();
 	void RemovePlayer();

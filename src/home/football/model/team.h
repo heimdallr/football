@@ -26,8 +26,12 @@ public:
 			Number,
 			PlayerCount,
 			SubstituteCount,
+			SourceModel,
 		};
 	};
+
+	static std::unique_ptr<QAbstractItemModel> Create(std::shared_ptr<SqlDatabase> db);
+	static std::unique_ptr<QAbstractItemModel> Create(QAbstractItemModel* sourceModel);
 
 public:
 	explicit ModelTeam(std::shared_ptr<SqlDatabase> db, QObject* parent = nullptr);

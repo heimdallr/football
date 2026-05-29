@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout">
+  <layout class="QHBoxLayout" name="layout">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -26,12 +26,6 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item>
-    <widget class="HomeCompa::Football::Team" name="team1" native="true"/>
-   </item>
-   <item>
-    <widget class="HomeCompa::Football::Team" name="team2" native="true"/>
-   </item>
   </layout>
   <action name="actionAddPlayer">
    <property name="text">
@@ -56,14 +50,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>HomeCompa::Football::Team</class>
-   <extends>QWidget</extends>
-   <header>Team.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

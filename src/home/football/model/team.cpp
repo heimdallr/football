@@ -135,7 +135,7 @@ private:
 				return item.Display(index.column());
 
 			case Qt::TextAlignmentRole:
-				return QVariant::fromValue((index.column() == 0 ? Qt::AlignRight : IsOneOf(index.column(), 3, 4) ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter);
+				return QVariant::fromValue((index.column() == 0 || index.column() == 1 && !item.number ? Qt::AlignRight : IsOneOf(index.column(), 3, 4) ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter);
 
 			case Qt::BackgroundRole:
 				return item.Color(index.column());
@@ -181,11 +181,14 @@ private:
 					return item.substituteMinute > 0;
 				});
 
+			case Role::SourceModel:
+				return QVariant::fromValue(const_cast<QAbstractItemModel*>(static_cast<const QAbstractItemModel*>(this)));
+
 			default:
 				break;
 		}
 
-		return assert(false && "unexpected role"), QVariant{};
+		return assert(false && "unexpected role"), QVariant {};
 	}
 
 	bool SetData(const QModelIndex& index, const QVariant& value, const int role)
@@ -240,6 +243,16 @@ private:
 };
 
 } // namespace
+
+std::unique_ptr<QAbstractItemModel> ModelTeam::Create(std::shared_ptr<SqlDatabase> db)
+{
+	return std::make_unique<ModelTeam>(std::move(db));
+}
+
+std::unique_ptr<QAbstractItemModel> ModelTeam::Create(QAbstractItemModel* sourceModel)
+{
+	return std::make_unique<ModelTeam>(sourceModel);
+}
 
 ModelTeam::ModelTeam(std::shared_ptr<SqlDatabase> db, QObject* parent)
 	: QSortFilterProxyModel(parent)

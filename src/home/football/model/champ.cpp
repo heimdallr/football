@@ -136,6 +136,9 @@ private: // QAbstractTableModel
 			case Role::TeamIds:
 				return QVariant::fromValue(std::make_pair(item.idTeam1, item.idTeam2));
 
+			case Role::MatchId:
+				return item.id; 
+
 			default:
 				break;
 		}
