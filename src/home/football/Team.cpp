@@ -259,9 +259,15 @@ private:
 		AddContextSubMenu(menu, Tr(GOAL_MENU), m_goals, [this](const int id) {
 			OnGoalTriggered(id);
 		});
-		menu.addAction(Tr(SUBSTITUTE), [this] {
-			OnSubstituteTriggered();
-		});
+
+		if (auto* action = menu.addAction(Tr(SUBSTITUTE), [this] {
+				OnSubstituteTriggered();
+			}))
+		{
+			if (const auto substituteIndex = m_ui.viewSubstitutes->currentIndex(); !substituteIndex.isValid() || !substituteIndex.data(ModelTeam::Role::Number).isValid())
+				action->setEnabled(false);
+		}
+
 		AddContextSubMenu(menu, Tr(CARD), m_cards, [this](const int id) {
 			OnCardTriggered(*m_ui.viewPlayers, id);
 		});
@@ -307,8 +313,8 @@ private:
 					OnSubstituteTriggered();
 				}
 			);
-		    !hasNumber)
-			action->setEnabled(false);
+		    !hasNumber || !m_ui.viewPlayers->currentIndex().isValid())
+				action->setEnabled(false);
 
 		menu.exec(QCursor::pos());
 	}
@@ -332,12 +338,43 @@ private:
 		query.next();
 	}
 
-	void OnCardTriggered(QAbstractItemView& /*view*/, const int /*id*/)
+	void OnCardTriggered(const QAbstractItemView& view, const int id)
 	{
+		const auto index = view.currentIndex();
+		assert(index.isValid() && m_currentTeamId);
+
+		const auto [minute, additional] = GetMinute(*m_settings, m_self);
+		if (!minute.isValid())
+			return;
+
+		const auto transaction = m_db->StartTransaction();
+		auto       query       = m_db->CreateQuery("select id from add_card(?, ?, ?, ?, ?)");
+		query.bindValue(0, *m_currentTeamId);
+		query.bindValue(1, index.data(ModelTeam::Role::ChampId));
+		query.bindValue(2, id);
+		query.bindValue(3, minute);
+		query.bindValue(4, additional);
+		query.exec();
+		query.next();
 	}
 
 	void OnSubstituteTriggered()
 	{
+		const auto playerIndex = m_ui.viewPlayers->currentIndex(), substituteIndex = m_ui.viewSubstitutes->currentIndex();
+		assert(playerIndex.isValid() && substituteIndex.isValid());
+
+		const auto [minute, additional] = GetMinute(*m_settings, m_self);
+		if (!minute.isValid())
+			return;
+
+		const auto transaction = m_db->StartTransaction();
+		auto       query       = m_db->CreateQuery("select id from add_substitute(?, ?, ?, ?)");
+		query.bindValue(0, playerIndex.data(ModelTeam::Role::MatchId));
+		query.bindValue(1, substituteIndex.data(ModelTeam::Role::ChampId));
+		query.bindValue(2, minute);
+		query.bindValue(3, additional);
+		query.exec();
+		query.next();
 	}
 
 	void UpdateDictionaries()
