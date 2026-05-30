@@ -5,15 +5,17 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
+#include "SqlDatabase.h"
+
 namespace HomeCompa
 {
+
 class ISettings;
+
 }
 
 namespace HomeCompa::Football
 {
-
-class SqlDatabase;
 
 struct MatchTeamInfo
 {

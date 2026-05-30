@@ -44,7 +44,7 @@ class MainWindow::Impl final
 	NON_COPY_MOVABLE(Impl)
 
 public:
-	Impl(MainWindow& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, std::shared_ptr<Match> match)
+	Impl(MainWindow& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, std::shared_ptr<Match> match, std::shared_ptr<Group> group)
 		: GeometryRestorable(*this, settings, MAIN_WINDOW)
 		, GeometryRestorableObserver(self)
 		, m_self { self }
@@ -52,10 +52,11 @@ public:
 		, m_db { std::move(db) }
 		, m_modelChamp { std::shared_ptr<QAbstractItemModel> { std::move(modelChamp) } }
 		, m_match { std::move(match) }
+		, m_group { std::move(group) }
 		, m_champInfo { GetChampInfo(*m_settings, *m_db) }
 	{
 		m_ui.setupUi(&m_self);
-		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown });
+		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown, m_ui.actionShowGroups });
 
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
@@ -63,6 +64,7 @@ public:
 		SetSpans(1);
 
 		m_ui.stackedWidget->addWidget(m_match.get());
+		m_ui.stackedWidget->addWidget(m_group.get());
 
 		connect(m_ui.stackedWidget, &QStackedWidget::currentChanged, [this](const int index) {
 			OnStackedWidgetCurrentChanged(index);
@@ -86,6 +88,9 @@ public:
 		connect(m_ui.actionMatchDetails, &QAction::triggered, [this] {
 			if (const auto index = m_ui.viewChamp->currentIndex(); index.isValid())
 				m_ui.stackedWidget->setCurrentIndex(1);
+		});
+		connect(m_ui.actionShowGroups, &QAction::triggered, [this] {
+			m_ui.stackedWidget->setCurrentIndex(2);
 		});
 		const auto incrementFontSize = [&](const int value) {
 			const auto fontSize = m_settings->Get(FONT_SIZE_KEY, FONT_SIZE_DEFAULT);
@@ -152,6 +157,9 @@ private:
 				return m_match->SetTeams(index.data(ModelChamp::Role::MatchId).toInt(), idTeam1, idTeam2);
 			}
 
+			case 2:
+				return m_group->Init(m_settings->Get(Constant::CHAMP_ID_KEY, 0));
+
 			default:
 				break;
 		}
@@ -196,6 +204,7 @@ private:
 	PropagateConstPtr<SqlDatabase, std::shared_ptr>        m_db;
 	PropagateConstPtr<QAbstractItemModel, std::shared_ptr> m_modelChamp;
 	PropagateConstPtr<Match, std::shared_ptr>              m_match;
+	PropagateConstPtr<Group, std::shared_ptr>              m_group;
 
 	QLabel* m_timeLabel { new QLabel };
 
@@ -204,9 +213,16 @@ private:
 	Ui::MainWindow m_ui {};
 };
 
-MainWindow::MainWindow(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, std::shared_ptr<Match> match, QWidget* parent)
+MainWindow::MainWindow(
+	std::shared_ptr<ISettings>   settings,
+	std::shared_ptr<SqlDatabase> db,
+	std::shared_ptr<ModelChamp>  modelChamp,
+	std::shared_ptr<Match>       match,
+	std::shared_ptr<Group>       group,
+	QWidget*                     parent
+)
 	: QMainWindow(parent)
-	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp), std::move(match))
+	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group))
 {
 }
 
