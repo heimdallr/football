@@ -128,6 +128,7 @@ private: // QAbstractTableModel
 		switch (role)
 		{
 			case Qt::DisplayRole:
+			case Qt::ToolTipRole:
 				return item.Display(index.column());
 
 			case Qt::TextAlignmentRole:
@@ -137,7 +138,7 @@ private: // QAbstractTableModel
 				return QVariant::fromValue(std::make_pair(item.idTeam1, item.idTeam2));
 
 			case Role::MatchId:
-				return item.id; 
+				return item.id;
 
 			default:
 				break;

@@ -132,6 +132,7 @@ private:
 		switch (role)
 		{
 			case Qt::DisplayRole:
+			case Qt::ToolTipRole:
 				return item.Display(index.column());
 
 			case Qt::TextAlignmentRole:

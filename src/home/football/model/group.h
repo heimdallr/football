@@ -20,6 +20,8 @@ public:
 		enum
 		{
 			ChampId = Qt::UserRole + 1,
+			GroupSize,
+			GroupCount,
 		};
 	};
 

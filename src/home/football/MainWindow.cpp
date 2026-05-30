@@ -44,7 +44,16 @@ class MainWindow::Impl final
 	NON_COPY_MOVABLE(Impl)
 
 public:
-	Impl(MainWindow& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, std::shared_ptr<ModelChamp> modelChamp, std::shared_ptr<Match> match, std::shared_ptr<Group> group)
+	Impl(
+		MainWindow&                                self,
+		std::shared_ptr<ISettings>                 settings,
+		std::shared_ptr<SqlDatabase>               db,
+		std::shared_ptr<ModelChamp>                modelChamp,
+		std::shared_ptr<Match>                     match,
+		std::shared_ptr<Group>                     group,
+		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
+		std::shared_ptr<Util::ScrollBarController> scrollBarController
+	)
 		: GeometryRestorable(*this, settings, MAIN_WINDOW)
 		, GeometryRestorableObserver(self)
 		, m_self { self }
@@ -53,6 +62,8 @@ public:
 		, m_modelChamp { std::shared_ptr<QAbstractItemModel> { std::move(modelChamp) } }
 		, m_match { std::move(match) }
 		, m_group { std::move(group) }
+		, m_itemViewToolTipper { std::move(itemViewToolTipper) }
+		, m_scrollBarController { std::move(scrollBarController) }
 		, m_champInfo { GetChampInfo(*m_settings, *m_db) }
 	{
 		m_ui.setupUi(&m_self);
@@ -61,6 +72,9 @@ public:
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
 		m_ui.viewChamp->addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag });
+		m_ui.viewChamp->viewport()->installEventFilter(m_itemViewToolTipper.get());
+		m_ui.viewChamp->viewport()->installEventFilter(m_scrollBarController.get());
+		m_scrollBarController->SetScrollArea(m_ui.viewChamp);
 		SetSpans(1);
 
 		m_ui.stackedWidget->addWidget(m_match.get());
@@ -200,13 +214,14 @@ private:
 private:
 	MainWindow& m_self;
 
-	PropagateConstPtr<ISettings, std::shared_ptr>          m_settings;
-	PropagateConstPtr<SqlDatabase, std::shared_ptr>        m_db;
-	PropagateConstPtr<QAbstractItemModel, std::shared_ptr> m_modelChamp;
-	PropagateConstPtr<Match, std::shared_ptr>              m_match;
-	PropagateConstPtr<Group, std::shared_ptr>              m_group;
-
-	QLabel* m_timeLabel { new QLabel };
+	PropagateConstPtr<ISettings, std::shared_ptr>                 m_settings;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr>               m_db;
+	PropagateConstPtr<QAbstractItemModel, std::shared_ptr>        m_modelChamp;
+	PropagateConstPtr<Match, std::shared_ptr>                     m_match;
+	PropagateConstPtr<Group, std::shared_ptr>                     m_group;
+	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipper;
+	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarController;
+	QLabel*                                                       m_timeLabel { new QLabel };
 
 	QString m_champInfo;
 
@@ -214,15 +229,17 @@ private:
 };
 
 MainWindow::MainWindow(
-	std::shared_ptr<ISettings>   settings,
-	std::shared_ptr<SqlDatabase> db,
-	std::shared_ptr<ModelChamp>  modelChamp,
-	std::shared_ptr<Match>       match,
-	std::shared_ptr<Group>       group,
-	QWidget*                     parent
+	std::shared_ptr<ISettings>                 settings,
+	std::shared_ptr<SqlDatabase>               db,
+	std::shared_ptr<ModelChamp>                modelChamp,
+	std::shared_ptr<Match>                     match,
+	std::shared_ptr<Group>                     group,
+	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
+	std::shared_ptr<Util::ScrollBarController> scrollBarController,
+	QWidget*                                   parent
 )
 	: QMainWindow(parent)
-	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group))
+	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group), std::move(itemViewToolTipper), std::move(scrollBarController))
 {
 }
 

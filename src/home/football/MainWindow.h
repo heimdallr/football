@@ -7,6 +7,8 @@
 
 #include "model/champ.h"
 #include "settings/ISettings.h"
+#include "utilgui/ItemViewToolTipper.h"
+#include "utilgui/ScrollBarController.h"
 
 #include "Group.h"
 #include "Match.h"
@@ -22,12 +24,14 @@ class MainWindow final : public QMainWindow
 
 public:
 	MainWindow(
-		std::shared_ptr<ISettings>   settings,
-		std::shared_ptr<SqlDatabase> db,
-		std::shared_ptr<ModelChamp>  modelChamp,
-		std::shared_ptr<Match>       match,
-		std::shared_ptr<Group>       group,
-		QWidget*                     parent = nullptr
+		std::shared_ptr<ISettings>                 settings,
+		std::shared_ptr<SqlDatabase>               db,
+		std::shared_ptr<ModelChamp>                modelChamp,
+		std::shared_ptr<Match>                     match,
+		std::shared_ptr<Group>                     group,
+		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
+		std::shared_ptr<Util::ScrollBarController> scrollBarController,
+		QWidget*                                   parent = nullptr
 	);
 	~MainWindow() override;
 

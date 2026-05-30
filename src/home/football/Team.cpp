@@ -78,7 +78,7 @@ QString Tr(const char* str)
 	return QCoreApplication::translate(CONTEXT, str);
 }
 
-void AddHeader(QAbstractItemModel& model, QTableView& view)
+void SetupView(QAbstractItemModel& model, QTableView& view, Util::ItemViewToolTipper& toolTipper, Util::ScrollBarController& scrollBarController)
 {
 	view.setModel(&model);
 
@@ -108,6 +108,10 @@ void AddHeader(QAbstractItemModel& model, QTableView& view)
 	header->setSectionResizeMode(2, QHeaderView::Stretch);
 	header->setSectionResizeMode(3, QHeaderView::Fixed);
 	header->setSectionResizeMode(4, QHeaderView::Fixed);
+
+	view.viewport()->installEventFilter(&toolTipper);
+	view.viewport()->installEventFilter(&scrollBarController);
+	scrollBarController.SetScrollArea(&view);
 }
 
 std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, const int defaultMinute = 0)
@@ -156,17 +160,29 @@ std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, co
 class Team::Impl
 {
 public:
-	explicit Impl(Team& self, std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db)
+	explicit Impl(
+		Team&                                      self,
+		std::shared_ptr<ISettings>                 settings,
+		std::shared_ptr<SqlDatabase>               db,
+		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
+		std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
+		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
+		std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes
+	)
 		: m_self { self }
 		, m_settings { std::move(settings) }
 		, m_db { std::move(db) }
+		, m_itemViewToolTipperPlayers { std::move(itemViewToolTipperPlayers) }
+		, m_scrollBarControllerPlayers { std::move(scrollBarControllerPlayers) }
+		, m_itemViewToolTipperSubstitutes { std::move(itemViewToolTipperSubstitutes) }
+		, m_scrollBarControllerSubstitutes { std::move(scrollBarControllerSubstitutes) }
 		, m_modelPlayers { ModelTeam::Create(m_db) }
 		, m_modelSubstitutes { ModelTeam::Create(m_modelPlayers->data({}, ModelTeam::Role::SourceModel).value<QAbstractItemModel*>()) }
 	{
 		m_ui.setupUi(&m_self);
 
-		AddHeader(*m_modelPlayers, *m_ui.viewPlayers);
-		AddHeader(*m_modelSubstitutes, *m_ui.viewSubstitutes);
+		SetupView(*m_modelPlayers, *m_ui.viewPlayers, *m_itemViewToolTipperPlayers, *m_scrollBarControllerPlayers);
+		SetupView(*m_modelSubstitutes, *m_ui.viewSubstitutes, *m_itemViewToolTipperSubstitutes, *m_scrollBarControllerSubstitutes);
 
 		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, [this] {
 			OnPlayersContextMenuRequested();
@@ -314,7 +330,7 @@ private:
 				}
 			);
 		    !hasNumber || !m_ui.viewPlayers->currentIndex().isValid())
-				action->setEnabled(false);
+			action->setEnabled(false);
 
 		menu.exec(QCursor::pos());
 	}
@@ -389,10 +405,15 @@ private:
 private:
 	Team& m_self;
 
-	PropagateConstPtr<ISettings, std::shared_ptr>   m_settings;
-	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
-	PropagateConstPtr<QAbstractItemModel>           m_modelPlayers;
-	PropagateConstPtr<QAbstractItemModel>           m_modelSubstitutes;
+	PropagateConstPtr<ISettings, std::shared_ptr>                 m_settings;
+	PropagateConstPtr<SqlDatabase, std::shared_ptr>               m_db;
+	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipperPlayers;
+	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarControllerPlayers;
+	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipperSubstitutes;
+	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarControllerSubstitutes;
+
+	PropagateConstPtr<QAbstractItemModel> m_modelPlayers;
+	PropagateConstPtr<QAbstractItemModel> m_modelSubstitutes;
 
 	Dictionary m_cards;
 	Dictionary m_goals;
@@ -403,9 +424,25 @@ private:
 	Ui::Team m_ui;
 };
 
-Team::Team(std::shared_ptr<ISettings> settings, std::shared_ptr<SqlDatabase> db, QWidget* parent)
+Team::Team(
+	std::shared_ptr<ISettings>                 settings,
+	std::shared_ptr<SqlDatabase>               db,
+	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
+	std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
+	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
+	std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes,
+	QWidget*                                   parent
+)
 	: QWidget(parent)
-	, m_impl(*this, std::move(settings), std::move(db))
+	, m_impl(
+		  *this,
+		  std::move(settings),
+		  std::move(db),
+		  std::move(itemViewToolTipperPlayers),
+		  std::move(scrollBarControllerPlayers),
+		  std::move(itemViewToolTipperSubstitutes),
+		  std::move(scrollBarControllerSubstitutes)
+	  )
 {
 }
 
