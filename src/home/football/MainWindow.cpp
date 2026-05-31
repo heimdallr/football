@@ -27,6 +27,14 @@ namespace
 constexpr auto MAIN_WINDOW      = "MainWindow";
 constexpr auto CHAMP_HEADER_KEY = "ui/ChampHeaderView/layout";
 
+constexpr auto CONTEXT          = MAIN_WINDOW;
+constexpr auto CHANGE_TEAM = QT_TRANSLATE_NOOP("MainWindow", "Change team #%1");
+
+QString Tr(const char* str)
+{
+	return QCoreApplication::translate(CONTEXT, str);
+}
+
 QString GetChampInfo(const ISettings& settings, const SqlDatabase& db)
 {
 	auto query = db.CreateQuery("select info from get_champ_info(?)");
@@ -72,7 +80,7 @@ public:
 
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
-		m_ui.viewChamp->addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag });
+		m_ui.viewChamp->addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag, m_ui.actionEraseTeam1, m_ui.actionEraseTeam2, m_ui.actionSetTeamByGroup1, m_ui.actionSetTeamByGroup2 });
 		m_ui.viewChamp->viewport()->installEventFilter(m_itemViewToolTipper.get());
 		m_ui.viewChamp->viewport()->installEventFilter(m_scrollBarController.get());
 		m_scrollBarController->SetScrollArea(m_ui.viewChamp);
@@ -207,10 +215,20 @@ private:
 
 	void OnViewChampContextMenuRequested()
 	{
-		QMenu menu;
+		QMenu      menu;
 		menu.setFont(m_self.font());
+
+		const auto addSubMenu = [&](const QString& title, const QList<QAction*>& actions) {
+			auto* submenu = menu.addMenu(title);
+			submenu->setFont(m_self.font());
+			submenu->addActions(actions);
+		};
+
 		menu.addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag });
 		menu.addSeparator();
+		addSubMenu(Tr(CHANGE_TEAM).arg(1), { m_ui.actionEraseTeam1, m_ui.actionSetTeamByGroup1 });
+		addSubMenu(Tr(CHANGE_TEAM).arg(2), { m_ui.actionEraseTeam2, m_ui.actionSetTeamByGroup2 });
+
 		menu.exec(QCursor::pos());
 	}
 
