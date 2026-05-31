@@ -68,13 +68,31 @@
           </attribute>
          </widget>
         </item>
+        <item>
+         <widget class="QLabel" name="time">
+          <property name="font">
+           <font>
+            <pointsize>7</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Time</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="font">
+    <font>
+     <pointsize>6</pointsize>
+    </font>
+   </property>
+  </widget>
   <action name="actionExit">
    <property name="text">
     <string>E&amp;xit</string>

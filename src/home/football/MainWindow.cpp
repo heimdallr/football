@@ -9,13 +9,14 @@
 #include <QStatusBar>
 #include <QTimer>
 
-#include <config/version.h>
-
 #include "utilgui/GeometryRestorable.h"
 
+#include "Constant.h"
 #include "SelectChampDialog.h"
 #include "SettingsConstant.h"
 #include "Team.h"
+
+#include "config/version.h"
 
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
@@ -24,15 +25,12 @@ namespace
 {
 
 constexpr auto MAIN_WINDOW      = "MainWindow";
-constexpr auto FONT_SIZE_KEY    = "ui/Font/pointSizeF";
 constexpr auto CHAMP_HEADER_KEY = "ui/ChampHeaderView/layout";
-
-constexpr auto FONT_SIZE_DEFAULT = 9;
 
 QString GetChampInfo(const ISettings& settings, const SqlDatabase& db)
 {
 	auto query = db.CreateQuery("select info from get_champ_info(?)");
-	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY));
+	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY, -1));
 	return query.exec() && query.next() ? query.value(0).toString() : QString {};
 }
 
@@ -114,8 +112,8 @@ public:
 			m_ui.stackedWidget->setCurrentIndex(2);
 		});
 		const auto incrementFontSize = [&](const int value) {
-			const auto fontSize = m_settings->Get(FONT_SIZE_KEY, FONT_SIZE_DEFAULT);
-			m_settings->Set(FONT_SIZE_KEY, fontSize + value);
+			const auto fontSize = m_settings->Get(Global::FONT_SIZE_KEY, Global::FONT_SIZE_DEFAULT);
+			m_settings->Set(Global::FONT_SIZE_KEY, fontSize + value);
 		};
 		connect(m_ui.actionFontSizeUp, &QAction::triggered, &m_self, [=] {
 			incrementFontSize(1);
@@ -138,13 +136,13 @@ public:
 
 		SetTitle(m_champInfo);
 
-		m_self.statusBar()->addPermanentWidget(m_timeLabel);
+		m_self.statusBar()->addPermanentWidget(m_ui.time);
 		auto timer = new QTimer(&m_self);
 		timer->setInterval(std::chrono::milliseconds(100));
 		timer->setSingleShot(false);
 		timer->start();
 		connect(timer, &QTimer::timeout, [this] {
-			m_timeLabel->setText(QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss"));
+			m_ui.time->setText(QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss"));
 		});
 	}
 
@@ -152,15 +150,6 @@ public:
 	{
 		SaveGeometry();
 		m_settings->Set(CHAMP_HEADER_KEY, m_ui.viewChamp->horizontalHeader()->saveState());
-	}
-
-private: // GeometryRestorableObserver
-	void OnFontChanged(const QFont&) override
-	{
-		auto font = m_timeLabel->font();
-		font.setPointSizeF(3 * font.pointSizeF() / 4);
-		m_self.statusBar()->setFont(font);
-		m_timeLabel->setFont(font);
 	}
 
 private:
@@ -186,7 +175,7 @@ private:
 			}
 
 			case 2:
-				return m_group->Init(m_settings->Get(Constant::CHAMP_ID_KEY, 0));
+				return m_group->Init(m_settings->Get(Constant::CHAMP_ID_KEY, -1));
 
 			default:
 				break;
@@ -236,7 +225,6 @@ private:
 	PropagateConstPtr<Group, std::shared_ptr>                     m_group;
 	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipper;
 	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarController;
-	QLabel*                                                       m_timeLabel { new QLabel };
 
 	QString m_champInfo;
 

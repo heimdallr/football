@@ -70,7 +70,7 @@ Items ReadItems(const ISettings& settings, const SqlDatabase& db)
 {
 	Items items;
 	auto  query = db.CreateQuery("select ID, CITY_NAME, PLAY_AT, ORD_NUM, ID_STATUS, RANKING, STATUS, GOAL_COUNT, ID_C1, ID_C2, COUNTRIES, ALL_EXISTS, ID_GROUP, GROUP_NAME from GET_MATCH(?)");
-	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY));
+	query.bindValue(0, settings.Get(Constant::CHAMP_ID_KEY, -1));
 	if (query.exec())
 		while (query.next())
 			items.emplace_back(ReadItem<Item>(query));
