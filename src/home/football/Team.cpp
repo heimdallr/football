@@ -42,6 +42,44 @@ constexpr auto SUBSTITUTE_COUNT = QT_TRANSLATE_NOOP("Team", "Substitutes: %1");
 constexpr auto GET_MINUTE_TITLE = QT_TRANSLATE_NOOP("Team", "Enter the minute of the match");
 constexpr auto GET_MINUTE_LABEL = QT_TRANSLATE_NOOP("Team", "Minute of the match");
 
+class ViewResizer final : public QObject
+{
+public:
+	explicit ViewResizer(QTableView& view)
+		: QObject(&view)
+		, m_view { view }
+	{
+	}
+
+private: // QObject
+	bool eventFilter(QObject*, QEvent* event) override
+	{
+		if (event->type() == QEvent::Resize)
+			QTimer::singleShot(0, [this] {
+				SetColumnsWidth();
+			});
+
+		return false;
+	}
+
+private:
+	void SetColumnsWidth() const
+	{
+		const auto s = m_view.rowHeight(0);
+		auto&      h = *m_view.horizontalHeader();
+		h.resizeSection(0, s);
+		h.resizeSection(3, 3 * s);
+		h.resizeSection(4, 3 * s);
+
+		const auto width = m_view.viewport()->width() - (h.sectionSize(0) + h.sectionSize(3) + h.sectionSize(4));
+		h.resizeSection(1, 3 * width / 5);
+		h.resizeSection(2, width - h.sectionSize(1));
+	}
+
+private:
+	QTableView& m_view;
+};
+
 struct DictionaryItem
 {
 	int     id;
@@ -97,18 +135,10 @@ void SetupView(QAbstractItemModel& model, QTableView& view, Util::ItemViewToolTi
 	header->setCellLabel(1, 4, Tr(MINUTE));
 
 	view.setHorizontalHeader(header);
+	for (int i = 0, sz = header->count(); i < sz; ++i)
+		header->setSectionResizeMode(i, QHeaderView::Fixed);
 
-	const auto s = header->sectionSizeFromContents(0).height();
-	header->resizeSection(0, s);
-	header->resizeSection(3, 5 * s / 2);
-	header->resizeSection(4, 5 * s / 2);
-
-	header->setSectionResizeMode(0, QHeaderView::Fixed);
-	header->setSectionResizeMode(1, QHeaderView::Stretch);
-	header->setSectionResizeMode(2, QHeaderView::Stretch);
-	header->setSectionResizeMode(3, QHeaderView::Fixed);
-	header->setSectionResizeMode(4, QHeaderView::Fixed);
-
+	view.viewport()->installEventFilter(new ViewResizer(view));
 	view.viewport()->installEventFilter(&toolTipper);
 	view.viewport()->installEventFilter(&scrollBarController);
 	scrollBarController.SetScrollArea(&view);
