@@ -21,8 +21,8 @@ using Role = ModelChamp::Role;
 constexpr auto CONTEXT = "ChampModel";
 
 constexpr const char* HEADERS[] {
-	QT_TRANSLATE_NOOP("ChampModel", "Date, time"), QT_TRANSLATE_NOOP("ChampModel", "Stage"), QT_TRANSLATE_NOOP("ChampModel", "Group"),
-	QT_TRANSLATE_NOOP("ChampModel", "Teams"),      QT_TRANSLATE_NOOP("ChampModel", "Score"), QT_TRANSLATE_NOOP("ChampModel", "City, stadium"),
+	QT_TRANSLATE_NOOP("ChampModel", "Date, Time"), QT_TRANSLATE_NOOP("ChampModel", "Stage"), QT_TRANSLATE_NOOP("ChampModel", "Group"),
+	QT_TRANSLATE_NOOP("ChampModel", "Teams"),      QT_TRANSLATE_NOOP("ChampModel", "Score"), QT_TRANSLATE_NOOP("ChampModel", "Stadium. City"),
 };
 
 struct Item
@@ -100,7 +100,7 @@ private: // QAbstractTableModel
 	{
 		return role != Qt::DisplayRole       ? QAbstractTableModel::headerData(section, orientation, role)
 		     : orientation == Qt::Horizontal ? QVariant::fromValue(QCoreApplication::translate(CONTEXT, HEADERS[section]))
-		                                     : m_items[section].ordNum;
+		                                     : m_items[static_cast<size_t>(section)].ordNum;
 	}
 
 	int columnCount(const QModelIndex&) const override

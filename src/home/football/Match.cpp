@@ -31,8 +31,10 @@ public:
 	{
 		m_ui.setupUi(&m_self);
 
-		m_ui.layout->addWidget(m_team1.get());
+		m_team1->SetMode(Team::Mode::Left);
+		m_team2->SetMode(Team::Mode::Right);
 		m_ui.layout->addWidget(m_team2.get());
+		m_ui.layout->insertWidget(0, m_team1.get());
 
 		m_self.addActions({ m_ui.actionAddPlayer, m_ui.actionRemovePlayer });
 

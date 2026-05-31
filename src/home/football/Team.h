@@ -33,6 +33,13 @@ class Team final : public QWidget
 	NON_COPY_MOVABLE(Team)
 
 public:
+	enum class Mode
+	{
+		Left,
+		Right,
+	};
+
+public:
 	Team(
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
@@ -44,6 +51,7 @@ public:
 	);
 	~Team() override;
 
+	void          SetMode(Mode mode);
 	MatchTeamInfo SetTeam(int idTeam);
 	MatchTeamInfo GetInfo() const;
 

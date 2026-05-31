@@ -192,6 +192,15 @@ public:
 		});
 	}
 
+	void SetMode(const Mode mode) const
+	{
+		if (mode == Mode::Left)
+			return;
+
+		m_ui.topLayout->removeWidget(m_ui.goals);
+		m_ui.topLayout->insertWidget(0, m_ui.goals);
+	}
+
 	MatchTeamInfo SetTeam(const int idTeam)
 	{
 		if (!m_currentTeamId || *m_currentTeamId != idTeam)
@@ -217,7 +226,11 @@ public:
 		query.exec();
 		query.next();
 
-		return ReadItem<MatchTeamInfo>(query);
+		auto result = ReadItem<MatchTeamInfo>(query);
+
+		m_ui.goals->setText(QString::number(result.goalCount));
+
+		return result;
 	}
 
 	void OnAddPlayerTriggered()
@@ -447,6 +460,11 @@ Team::Team(
 }
 
 Team::~Team() = default;
+
+void Team::SetMode(const Mode mode)
+{
+	m_impl->SetMode(mode);
+}
 
 MatchTeamInfo Team::SetTeam(const int idTeam)
 {

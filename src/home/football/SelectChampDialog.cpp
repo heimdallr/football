@@ -12,6 +12,10 @@ using namespace HomeCompa::Football;
 namespace
 {
 
+constexpr auto CONTEXT = "SelectChampDialog";
+
+constexpr const char* HEADERS[] { QT_TRANSLATE_NOOP("SelectChampDialog", "Year"), QT_TRANSLATE_NOOP("SelectChampDialog", "Description") };
+
 struct Role
 {
 	enum
@@ -41,9 +45,14 @@ public:
 	}
 
 private: // QAbstractItemModel
+	QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override
+	{
+		return orientation != Qt::Horizontal || role != Qt::DisplayRole ? QAbstractTableModel::headerData(section, orientation, role) : HEADERS[section];
+	}
+
 	int columnCount(const QModelIndex&) const override
 	{
-		return 2;
+		return static_cast<int>(std::size(HEADERS));
 	}
 
 	int rowCount(const QModelIndex& parent) const override
