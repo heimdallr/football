@@ -47,4 +47,4 @@ private:
 	PropagateConstPtr<QAbstractItemModel> m_sourceModel;
 };
 
-}
+} // namespace HomeCompa::Football

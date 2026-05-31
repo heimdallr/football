@@ -39,4 +39,4 @@ private:
 	Hypodermic::Container& m_container;
 };
 
-}
+} // namespace HomeCompa::Football

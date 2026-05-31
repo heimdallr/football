@@ -5,9 +5,10 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
-#include "SqlDatabase.h"
 #include "utilgui/ItemViewToolTipper.h"
 #include "utilgui/ScrollBarController.h"
+
+#include "SqlDatabase.h"
 
 namespace HomeCompa
 {
