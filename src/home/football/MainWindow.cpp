@@ -13,6 +13,7 @@
 
 #include "utilgui/GeometryRestorable.h"
 
+#include "SelectChampDialog.h"
 #include "SettingsConstant.h"
 #include "Team.h"
 
@@ -46,6 +47,7 @@ class MainWindow::Impl final
 public:
 	Impl(
 		MainWindow&                                self,
+		std::shared_ptr<const IFactory>            factory,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
 		std::shared_ptr<ModelChamp>                modelChamp,
@@ -57,6 +59,7 @@ public:
 		: GeometryRestorable(*this, settings, MAIN_WINDOW)
 		, GeometryRestorableObserver(self)
 		, m_self { self }
+		, m_factory { std::move(factory) }
 		, m_settings { std::move(settings) }
 		, m_db { std::move(db) }
 		, m_modelChamp { std::shared_ptr<QAbstractItemModel> { std::move(modelChamp) } }
@@ -67,7 +70,7 @@ public:
 		, m_champInfo { GetChampInfo(*m_settings, *m_db) }
 	{
 		m_ui.setupUi(&m_self);
-		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown, m_ui.actionShowGroups });
+		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown, m_ui.actionShowGroups, m_ui.actionSelectChampionship });
 
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
@@ -80,6 +83,10 @@ public:
 		m_ui.stackedWidget->addWidget(m_match.get());
 		m_ui.stackedWidget->addWidget(m_group.get());
 
+		connect(m_ui.actionSelectChampionship, &QAction::triggered, [this] {
+			if (m_factory->CreateSelectChampDialog()->exec() == QDialog::Accepted)
+				Reset();
+		});
 		connect(m_ui.stackedWidget, &QStackedWidget::currentChanged, [this](const int index) {
 			OnStackedWidgetCurrentChanged(index);
 		});
@@ -147,7 +154,7 @@ public:
 		m_settings->Set(CHAMP_HEADER_KEY, m_ui.viewChamp->horizontalHeader()->saveState());
 	}
 
-private:
+private: // GeometryRestorableObserver
 	void OnFontChanged(const QFont&) override
 	{
 		auto font = m_timeLabel->font();
@@ -157,6 +164,13 @@ private:
 	}
 
 private:
+	void Reset()
+	{
+		SetTitle(m_champInfo = GetChampInfo(*m_settings, *m_db));
+		m_modelChamp->setData({}, {}, ModelChamp::Role::Reset);
+		m_ui.stackedWidget->setCurrentIndex(0);
+	}
+
 	void OnStackedWidgetCurrentChanged(const int pageIndex)
 	{
 		switch (pageIndex)
@@ -214,6 +228,7 @@ private:
 private:
 	MainWindow& m_self;
 
+	std::shared_ptr<const IFactory>                               m_factory;
 	PropagateConstPtr<ISettings, std::shared_ptr>                 m_settings;
 	PropagateConstPtr<SqlDatabase, std::shared_ptr>               m_db;
 	PropagateConstPtr<QAbstractItemModel, std::shared_ptr>        m_modelChamp;
@@ -229,6 +244,7 @@ private:
 };
 
 MainWindow::MainWindow(
+	std::shared_ptr<IFactory>                  factory,
 	std::shared_ptr<ISettings>                 settings,
 	std::shared_ptr<SqlDatabase>               db,
 	std::shared_ptr<ModelChamp>                modelChamp,
@@ -239,7 +255,7 @@ MainWindow::MainWindow(
 	QWidget*                                   parent
 )
 	: QMainWindow(parent)
-	, m_impl(*this, std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group), std::move(itemViewToolTipper), std::move(scrollBarController))
+	, m_impl(*this, std::move(factory), std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group), std::move(itemViewToolTipper), std::move(scrollBarController))
 {
 }
 

@@ -24,6 +24,7 @@ public:
 			SwitchMatchEndFlag = Qt::UserRole + 1,
 			TeamIds,
 			MatchId,
+			Reset,
 		};
 	};
 

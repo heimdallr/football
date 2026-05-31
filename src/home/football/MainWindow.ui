@@ -152,6 +152,17 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
+  <action name="actionSelectChampionship">
+   <property name="text">
+    <string>Select Championship</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+C</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

@@ -90,15 +90,7 @@ public:
 		, m_db { std::move(db) }
 		, m_items { ReadItems(*m_settings, *m_db) }
 		, m_subscription { m_db->Subscribe("match", [this] {
-			const ScopedCall resetGuard(
-				[this] {
-					beginResetModel();
-				},
-				[this] {
-					endResetModel();
-				}
-			);
-			m_items = ReadItems(*m_settings, *m_db);
+			Reset();
 		}) }
 	{
 	}
@@ -148,6 +140,9 @@ private: // QAbstractTableModel
 
 	bool setData(const QModelIndex& index, const QVariant& value, const int role) override
 	{
+		if (role == Role::Reset)
+			return Reset(), true;
+
 		assert(index.isValid() && index.row() < rowCount({}));
 		const auto& item = m_items[index.row()];
 		switch (role)
@@ -160,6 +155,20 @@ private: // QAbstractTableModel
 		}
 
 		return QAbstractTableModel::setData(index, value, role);
+	}
+
+private:
+	void Reset()
+	{
+		const ScopedCall resetGuard(
+			[this] {
+				beginResetModel();
+			},
+			[this] {
+				endResetModel();
+			}
+		);
+		m_items = ReadItems(*m_settings, *m_db);
 	}
 
 	void SwitchMatchEndFlag(const int id)
