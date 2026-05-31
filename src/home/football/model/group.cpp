@@ -59,7 +59,7 @@ struct Item
 		column -= 5;
 
 		if (column < static_cast<int>(score.size()))
-			return score[column] ? QString("%1:%2").arg(score[column]->first).arg(score[column]->second) : QVariant {};
+			return score[column] ? QString("%1 : %2").arg(score[column]->first).arg(score[column]->second) : QVariant {};
 
 		column -= static_cast<int>(score.size());
 
@@ -85,7 +85,7 @@ struct Item
 				const auto sum = std::accumulate(score.cbegin(), score.cend(), std::make_pair(0, 0), [](const auto& init, const auto& item) {
 					return item ? std::make_pair(init.first + item->first, init.second + item->second) : init;
 				});
-				return QString("%1:%2").arg(sum.first).arg(sum.second);
+				return QString("%1 : %2").arg(sum.first).arg(sum.second);
 			}
 
 			case 4:
@@ -228,7 +228,7 @@ private: // QAbstractItemModel
 			return headers[section];
 
 		if (m_items.empty())
-			return {};
+			return QAbstractTableModel::headerData(section, orientation, role);
 
 		section -= 5;
 		if (section < static_cast<int>(m_items.front().score.size()))
