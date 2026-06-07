@@ -13,3 +13,5 @@ AddTarget(${PROJECT_NAME} app
 		settings
 		utilgui
 )
+
+file(COPY "D:/sdk/firebird/client/x64/" DESTINATION ${CMAKE_BINARY_DIR}/bin)
