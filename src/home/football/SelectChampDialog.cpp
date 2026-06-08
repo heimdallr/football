@@ -110,8 +110,7 @@ public:
 		self.addActions({ m_ui.actionSelect, m_ui.actionDiscard });
 
 		m_ui.view->setModel(m_model.get());
-		m_ui.view->viewport()->installEventFilter(m_itemViewToolTipper.get());
-		m_ui.view->viewport()->installEventFilter(m_scrollBarController.get());
+		m_itemViewToolTipper->SetScrollArea(m_ui.view);
 		m_scrollBarController->SetScrollArea(m_ui.view);
 
 		if (const auto match = m_model->match(m_model->index(0, 0), Role::Id, m_settings->Get(Constant::CHAMP_ID_KEY, -1), 1, Qt::MatchExactly); !match.isEmpty())

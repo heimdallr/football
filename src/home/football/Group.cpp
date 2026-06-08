@@ -22,8 +22,7 @@ public:
 	{
 		m_ui.setupUi(&m_self);
 		m_ui.view->setModel(m_model.get());
-		m_ui.view->viewport()->installEventFilter(m_itemViewToolTipper.get());
-		m_ui.view->viewport()->installEventFilter(m_scrollBarController.get());
+		m_itemViewToolTipper->SetScrollArea(m_ui.view);
 		m_scrollBarController->SetScrollArea(m_ui.view);
 	}
 

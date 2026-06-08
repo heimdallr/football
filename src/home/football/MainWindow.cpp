@@ -81,8 +81,7 @@ public:
 		m_ui.viewChamp->setModel(m_modelChamp.get());
 		m_ui.viewChamp->resizeColumnsToContents();
 		m_ui.viewChamp->addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag, m_ui.actionEraseTeam1, m_ui.actionEraseTeam2, m_ui.actionSetTeamByGroup1, m_ui.actionSetTeamByGroup2 });
-		m_ui.viewChamp->viewport()->installEventFilter(m_itemViewToolTipper.get());
-		m_ui.viewChamp->viewport()->installEventFilter(m_scrollBarController.get());
+		m_itemViewToolTipper->SetScrollArea(m_ui.viewChamp);
 		m_scrollBarController->SetScrollArea(m_ui.viewChamp);
 		SetSpans(1);
 
