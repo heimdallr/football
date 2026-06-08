@@ -31,6 +31,15 @@ QVariant FromInt(const int value)
 	return color;
 }
 
+int Years(const QDate& date)
+{
+	const auto today = QDate::currentDate();
+	const auto comparable = [](const QDate& d) {
+		return std::make_tuple(d.month(), d.day());
+	};
+	return today.year() - date.year() - (comparable(today) < comparable(date));
+}
+
 struct Item
 {
 	int      ordNum;
@@ -46,12 +55,12 @@ struct Item
 	QDate    birthday;
 	int      playerColor;
 
-	QVariant Display(const int column) const
+	QVariant Display(const int column, const int role) const
 	{
 		switch (column)
 		{
 			case 0:
-				return number ? number : QVariant {};
+				return role == Qt::ToolTipRole ? QString("%1 - %2").arg(birthday.toString("yyyy.MM.dd")).arg(Years(birthday)) : number ? QString::number(number) : QVariant {};
 			case 1:
 				return name;
 			case 2:
@@ -133,7 +142,7 @@ private:
 		{
 			case Qt::DisplayRole:
 			case Qt::ToolTipRole:
-				return item.Display(index.column());
+				return item.Display(index.column(), role);
 
 			case Qt::TextAlignmentRole:
 				return QVariant::fromValue((index.column() == 0 || index.column() == 1 && !item.number ? Qt::AlignRight : IsOneOf(index.column(), 3, 4) ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter);

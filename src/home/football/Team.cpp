@@ -139,6 +139,7 @@ void SetupView(QAbstractItemModel& model, QTableView& view, Util::ItemViewToolTi
 		header->setSectionResizeMode(i, QHeaderView::Fixed);
 
 	view.viewport()->installEventFilter(new ViewResizer(view));
+	toolTipper.SetShowForceColumns({ 0 });
 	toolTipper.SetScrollArea(&view);
 	scrollBarController.SetScrollArea(&view);
 }
