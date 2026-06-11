@@ -15,3 +15,7 @@ AddTarget(${PROJECT_NAME} app
 )
 
 file(COPY "D:/sdk/firebird/client/x64/" DESTINATION ${CMAKE_BINARY_DIR}/bin)
+install(DIRECTORY "D:/sdk/firebird/client/x64/" DESTINATION .)
+
+file(COPY "${CMAKE_CURRENT_LIST_DIR}/../resources/config/football.ini" DESTINATION ${CMAKE_BINARY_DIR}/bin)
+install(FILES "${CMAKE_CURRENT_LIST_DIR}/../resources/config/football.ini" DESTINATION .)
