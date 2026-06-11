@@ -33,7 +33,7 @@ QVariant FromInt(const int value)
 
 int Years(const QDate& date)
 {
-	const auto today = QDate::currentDate();
+	const auto today      = QDate::currentDate();
 	const auto comparable = [](const QDate& d) {
 		return std::make_tuple(d.month(), d.day());
 	};

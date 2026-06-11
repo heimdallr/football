@@ -27,7 +27,7 @@ namespace
 constexpr auto MAIN_WINDOW      = "MainWindow";
 constexpr auto CHAMP_HEADER_KEY = "ui/ChampHeaderView/layout";
 
-constexpr auto CONTEXT          = MAIN_WINDOW;
+constexpr auto CONTEXT     = MAIN_WINDOW;
 constexpr auto CHANGE_TEAM = QT_TRANSLATE_NOOP("MainWindow", "Change team #%1");
 
 QString Tr(const char* str)
@@ -214,7 +214,7 @@ private:
 
 	void OnViewChampContextMenuRequested()
 	{
-		QMenu      menu;
+		QMenu menu;
 		menu.setFont(m_self.font());
 
 		const auto addSubMenu = [&](const QString& title, const QList<QAction*>& actions) {
