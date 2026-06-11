@@ -1,7 +1,7 @@
 #include "champ.h"
 
+#include <QColor>
 #include <QCoreApplication>
-#include <QSqlDriver>
 
 #include "fnd/IsOneOf.h"
 #include "fnd/ScopedCall.h"
@@ -123,6 +123,9 @@ private: // QAbstractTableModel
 			case Qt::ToolTipRole:
 				return item.Display(index.column());
 
+			case Qt::BackgroundRole:
+				return IsNext(index.row()) ? QColor(Qt::darkGreen) : QVariant {};
+
 			case Qt::TextAlignmentRole:
 				return QVariant::fromValue((IsOneOf(index.column(), 0, 5) ? Qt::AlignLeft : Qt::AlignHCenter) | Qt::AlignVCenter);
 
@@ -169,6 +172,12 @@ private:
 			}
 		);
 		m_items = ReadItems(*m_settings, *m_db);
+	}
+
+	bool IsNext(const int row) const
+	{
+		const auto now = QDateTime::currentDateTime();
+		return m_items[row].dateTime.addSecs(120 * 60) > now && (row == 0 || m_items[row - 1].dateTime.addSecs(120 * 60) < now);
 	}
 
 	void SwitchMatchEndFlag(const int id)
