@@ -6,11 +6,6 @@
 
 using namespace HomeCompa::Football;
 
-namespace
-{
-
-}
-
 class Group::Impl
 {
 public:
@@ -30,38 +25,44 @@ public:
 	{
 		m_model->setData({}, idChamp, ModelGroup::Role::ChampId);
 		QTimer::singleShot(0, [this] {
-			const auto rowCount = m_model->rowCount();
-			if (rowCount == 0)
-				return;
-
-			const auto groupSize   = m_model->data({}, ModelGroup::Role::GroupSize).toInt();
-			auto*      header      = m_ui.view->horizontalHeader();
-			const auto columnCount = header->count();
-
-			const auto s          = m_ui.view->rowHeight(0);
-			const auto scoreWidth = 3 * s;
-
-			for (auto i = 0, sz = columnCount; i < sz; ++i)
-			{
-				header->resizeSection(i, s);
-				header->setSectionResizeMode(i, QHeaderView::Fixed);
-			}
-			for (int i = 0; i < groupSize; ++i)
-			{
-				header->resizeSection(5 + i, scoreWidth);
-				header->setSectionResizeMode(5 + i, QHeaderView::Fixed);
-			}
-			header->setSectionResizeMode(3, QHeaderView::Stretch);
-			header->resizeSection(2, 3 * s / 2);
-			header->resizeSection(8 + groupSize, scoreWidth);
-
-			const auto groupCount = m_model->data({}, ModelGroup::Role::GroupCount).toInt();
-			for (int i = 0; i < groupCount; ++i)
-			{
-				m_ui.view->setSpan(i * (groupSize + 1), 0, groupSize, 1);
-				m_ui.view->setSpan(i * (groupSize + 1) + groupSize, 0, 1, columnCount);
-			}
+			InitImpl();
 		});
+	}
+
+private:
+	void InitImpl()
+	{
+		const auto rowCount = m_model->rowCount();
+		if (rowCount == 0)
+			return;
+
+		const auto groupSize   = m_model->data({}, ModelGroup::Role::GroupSize).toInt();
+		auto*      header      = m_ui.view->horizontalHeader();
+		const auto columnCount = header->count();
+
+		const auto s          = m_ui.view->rowHeight(0);
+		const auto scoreWidth = 3 * s;
+
+		for (auto i = 0, sz = columnCount; i < sz; ++i)
+		{
+			header->resizeSection(i, s);
+			header->setSectionResizeMode(i, QHeaderView::Fixed);
+		}
+		for (int i = 0; i < groupSize; ++i)
+		{
+			header->resizeSection(5 + i, scoreWidth);
+			header->setSectionResizeMode(5 + i, QHeaderView::Fixed);
+		}
+		header->setSectionResizeMode(3, QHeaderView::Stretch);
+		header->resizeSection(2, 3 * s / 2);
+		header->resizeSection(8 + groupSize, scoreWidth);
+
+		const auto groupCount = m_model->data({}, ModelGroup::Role::GroupCount).toInt();
+		for (int i = 0; i < groupCount; ++i)
+		{
+			m_ui.view->setSpan(i * (groupSize + 1), 0, groupSize, 1);
+			m_ui.view->setSpan(i * (groupSize + 1) + groupSize, 0, 1, columnCount);
+		}
 	}
 
 private:

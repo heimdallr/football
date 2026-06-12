@@ -79,11 +79,12 @@ public:
 		m_self.addActions({ m_ui.actionExit, m_ui.actionHome, m_ui.actionFontSizeUp, m_ui.actionFontSizeDown, m_ui.actionShowGroups, m_ui.actionSelectChampionship });
 
 		m_ui.viewChamp->setModel(m_modelChamp.get());
+		m_ui.viewChamp->setCurrentIndex(m_modelChamp->index(m_modelChamp->data({}, ModelChamp::Role::CurrentMatchRow).toInt(), 1));
 		m_ui.viewChamp->resizeColumnsToContents();
 		m_ui.viewChamp->addActions({ m_ui.actionMatchDetails, m_ui.actionChangeMatchEndFlag, m_ui.actionEraseTeam1, m_ui.actionEraseTeam2, m_ui.actionSetTeamByGroup1, m_ui.actionSetTeamByGroup2 });
 		m_itemViewToolTipper->SetScrollArea(m_ui.viewChamp);
 		m_scrollBarController->SetScrollArea(m_ui.viewChamp);
-		SetSpans(1);
+		SetSpans(0);
 
 		m_ui.stackedWidget->addWidget(m_match.get());
 		m_ui.stackedWidget->addWidget(m_group.get());
@@ -97,7 +98,7 @@ public:
 		});
 		connect(m_modelChamp.get(), &QAbstractItemModel::modelAboutToBeReset, [this] {
 			QTimer::singleShot(0, [this, row = m_ui.viewChamp->currentIndex().row()] {
-				m_ui.viewChamp->setCurrentIndex(m_modelChamp->index(row, 0));
+				m_ui.viewChamp->setCurrentIndex(m_modelChamp->index(row, 1));
 			});
 		});
 		connect(m_ui.viewChamp->selectionModel(), &QItemSelectionModel::selectionChanged, [this](const QItemSelection& selection) {
@@ -134,7 +135,8 @@ public:
 		connect(m_match.get(), &Match::MatchTeamInfoChanged, [this](const std::pair<MatchTeamInfo, MatchTeamInfo>& teamInfo) {
 			const auto& [team1, goal1, penalty1] = teamInfo.first;
 			const auto& [team2, goal2, penalty2] = teamInfo.second;
-			SetTitle(QString("%1 - %2, %3:%4%5").arg(team1, team2).arg(goal1).arg(goal2).arg(penalty1 + penalty2 > 0 ? QString(" (%1:%2)").arg(penalty1).arg(penalty2) : QString {}));
+			const auto dateTime = m_ui.viewChamp->currentIndex().isValid() ? m_ui.viewChamp->currentIndex().data(ModelChamp::Role::MatchDateTime).toDateTime().toString("yyyy.MM.dd hh:mm") : QString();
+			SetTitle(QString("%1, %2 - %3, %4:%5%6").arg(dateTime, team1, team2).arg(goal1).arg(goal2).arg(penalty1 + penalty2 > 0 ? QString(" (%1:%2)").arg(penalty1).arg(penalty2) : QString {}));
 		});
 
 		LoadGeometry();
@@ -209,7 +211,7 @@ private:
 
 	void SetTitle(const QString& title) const
 	{
-		m_self.setWindowTitle(QString("%1 - [%2]").arg(PRODUCT_ID, title));
+		m_self.setWindowTitle(QString("%1 - [ %2 ]").arg(PRODUCT_ID, title));
 	}
 
 	void OnViewChampContextMenuRequested()

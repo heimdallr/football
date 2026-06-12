@@ -187,7 +187,7 @@ std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, co
 
 } // namespace
 
-class Team::Impl
+class Team::Impl : public QObject
 {
 public:
 	explicit Impl(
@@ -219,12 +219,8 @@ public:
 		SetupView(*m_modelPlayers, *m_ui.viewPlayers, *m_itemViewToolTipperPlayers, *m_scrollBarControllerPlayers);
 		SetupView(*m_modelSubstitutes, *m_ui.viewSubstitutes, *m_itemViewToolTipperSubstitutes, *m_scrollBarControllerSubstitutes);
 
-		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, [this] {
-			OnPlayersContextMenuRequested();
-		});
-		connect(m_ui.viewSubstitutes, &QWidget::customContextMenuRequested, [this] {
-			OnSubstitutesContextMenuRequested();
-		});
+		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, this, &Impl::OnPlayersContextMenuRequested);
+		connect(m_ui.viewSubstitutes, &QWidget::customContextMenuRequested, this, &Impl::OnSubstitutesContextMenuRequested);
 	}
 
 	void SetMode(const Mode mode) const

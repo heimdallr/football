@@ -259,6 +259,16 @@ private: // QAbstractItemModel
 		return index.isValid() ? SetData(index, value, role) : SetData(value, role);
 	}
 
+	Qt::ItemFlags flags(const QModelIndex& index) const override
+	{
+		Qt::ItemFlags defaultFlags = QAbstractTableModel::flags(index);
+
+		if (index.column() == 0)
+			return defaultFlags & ~Qt::ItemIsSelectable;
+
+		return defaultFlags;
+	}
+
 private:
 	QVariant GetData(const QModelIndex& index, const int role) const
 	{

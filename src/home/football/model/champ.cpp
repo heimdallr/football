@@ -46,9 +46,9 @@ struct Item
 		switch (column)
 		{
 			case 0:
-				return dateTime.toString("dd.MM hh:mm");
-			case 1:
 				return status;
+			case 1:
+				return dateTime.toString("dd.MM hh:mm");
 			case 2:
 				return groupName;
 			case 3:
@@ -78,6 +78,10 @@ Items ReadItems(const ISettings& settings, const SqlDatabase& db)
 	std::ranges::sort(items, {}, [](const auto& item) {
 		return item.ordNum;
 	});
+
+	assert(std::ranges::is_sorted(items, {}, [](const auto& item) {
+		return item.dateTime;
+	}));
 
 	return items;
 }
@@ -115,30 +119,7 @@ private: // QAbstractTableModel
 
 	QVariant data(const QModelIndex& index, const int role) const override
 	{
-		assert(index.isValid() && index.row() < rowCount({}));
-		const auto& item = m_items[index.row()];
-		switch (role)
-		{
-			case Qt::DisplayRole:
-			case Qt::ToolTipRole:
-				return item.Display(index.column());
-
-			case Qt::BackgroundRole:
-				return IsNext(index.row()) ? QColor(Qt::darkGreen) : QVariant {};
-
-			case Qt::TextAlignmentRole:
-				return QVariant::fromValue((IsOneOf(index.column(), 0, 5) ? Qt::AlignLeft : Qt::AlignHCenter) | Qt::AlignVCenter);
-
-			case Role::TeamIds:
-				return QVariant::fromValue(std::make_pair(item.idTeam1, item.idTeam2));
-
-			case Role::MatchId:
-				return item.id;
-
-			default:
-				break;
-		}
-		return {};
+		return index.isValid() ? GetData(index, role) : GetData(role);
 	}
 
 	bool setData(const QModelIndex& index, const QVariant& value, const int role) override
@@ -164,13 +145,68 @@ private: // QAbstractTableModel
 	{
 		Qt::ItemFlags defaultFlags = QAbstractTableModel::flags(index);
 
-		if (index.column() == 1)
+		if (index.column() == 0)
 			return defaultFlags & ~Qt::ItemIsSelectable;
 
 		return defaultFlags;
 	}
 
 private:
+	QVariant GetData(const QModelIndex& index, const int role) const
+	{
+		const auto& item = m_items[index.row()];
+		switch (role)
+		{
+			case Qt::DisplayRole:
+			case Qt::ToolTipRole:
+				return item.Display(index.column());
+
+			case Qt::BackgroundRole:
+				return IsNext(index.row()) ? QColor(Qt::darkGreen) : QVariant {};
+
+			case Qt::TextAlignmentRole:
+				return QVariant::fromValue(((IsOneOf(index.column(), 0, 5) ? Qt::AlignLeft : Qt::AlignHCenter)) | (index.column() == 0 ? Qt::AlignTop : Qt::AlignVCenter));
+
+			case Role::TeamIds:
+				return QVariant::fromValue(std::make_pair(item.idTeam1, item.idTeam2));
+
+			case Role::MatchId:
+				return item.id;
+
+			case Role::MatchDateTime:
+				return item.dateTime;
+
+			default:
+				break;
+		}
+		return {};
+	}
+
+	QVariant GetData(const int role) const
+	{
+		switch (role)
+		{
+			case Role::CurrentMatchRow:
+				if (const auto it = std::ranges::upper_bound(
+						m_items,
+						QDateTime::currentDateTime().addSecs(-120 * 60),
+						{},
+						[](const auto& item) {
+							return item.dateTime;
+						}
+					);
+				    it != m_items.end())
+					return std::distance(m_items.begin(), it);
+				return {};
+
+			default:
+				break;
+		}
+
+		assert(false && "unexpected role");
+		return {};
+	}
+
 	void Reset()
 	{
 		const ScopedCall resetGuard(

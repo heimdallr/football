@@ -25,6 +25,8 @@ public:
 			TeamIds,
 			MatchId,
 			Reset,
+			CurrentMatchRow,
+			MatchDateTime,
 		};
 	};
 
