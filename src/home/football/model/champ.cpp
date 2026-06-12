@@ -160,6 +160,16 @@ private: // QAbstractTableModel
 		return QAbstractTableModel::setData(index, value, role);
 	}
 
+	Qt::ItemFlags flags(const QModelIndex& index) const override
+	{
+		Qt::ItemFlags defaultFlags = QAbstractTableModel::flags(index);
+
+		if (index.column() == 1)
+			return defaultFlags & ~Qt::ItemIsSelectable;
+
+		return defaultFlags;
+	}
+
 private:
 	void Reset()
 	{
