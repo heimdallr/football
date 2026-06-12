@@ -194,6 +194,7 @@ public:
 		Team&                                      self,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
+		std::shared_ptr<ViewDelegateStateFocus>    viewDelegateStateFocus,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
 		std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
@@ -202,6 +203,7 @@ public:
 		: m_self { self }
 		, m_settings { std::move(settings) }
 		, m_db { std::move(db) }
+		, m_viewDelegateStateFocus { std::move(viewDelegateStateFocus) }
 		, m_itemViewToolTipperPlayers { std::move(itemViewToolTipperPlayers) }
 		, m_scrollBarControllerPlayers { std::move(scrollBarControllerPlayers) }
 		, m_itemViewToolTipperSubstitutes { std::move(itemViewToolTipperSubstitutes) }
@@ -210,6 +212,9 @@ public:
 		, m_modelSubstitutes { ModelTeam::Create(m_modelPlayers->data({}, ModelTeam::Role::SourceModel).value<QAbstractItemModel*>()) }
 	{
 		m_ui.setupUi(&m_self);
+
+		m_ui.viewPlayers->setItemDelegate(m_viewDelegateStateFocus->GetDelegate());
+		m_ui.viewSubstitutes->setItemDelegate(m_viewDelegateStateFocus->GetDelegate());
 
 		SetupView(*m_modelPlayers, *m_ui.viewPlayers, *m_itemViewToolTipperPlayers, *m_scrollBarControllerPlayers);
 		SetupView(*m_modelSubstitutes, *m_ui.viewSubstitutes, *m_itemViewToolTipperSubstitutes, *m_scrollBarControllerSubstitutes);
@@ -450,6 +455,7 @@ private:
 
 	PropagateConstPtr<ISettings, std::shared_ptr>                 m_settings;
 	PropagateConstPtr<SqlDatabase, std::shared_ptr>               m_db;
+	PropagateConstPtr<ViewDelegateStateFocus, std::shared_ptr>    m_viewDelegateStateFocus;
 	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipperPlayers;
 	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarControllerPlayers;
 	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipperSubstitutes;
@@ -470,6 +476,7 @@ private:
 Team::Team(
 	std::shared_ptr<ISettings>                 settings,
 	std::shared_ptr<SqlDatabase>               db,
+	std::shared_ptr<ViewDelegateStateFocus>    viewDelegateStateFocus,
 	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
 	std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
 	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
@@ -481,6 +488,7 @@ Team::Team(
 		  *this,
 		  std::move(settings),
 		  std::move(db),
+		  std::move(viewDelegateStateFocus),
 		  std::move(itemViewToolTipperPlayers),
 		  std::move(scrollBarControllerPlayers),
 		  std::move(itemViewToolTipperSubstitutes),
