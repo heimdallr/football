@@ -171,6 +171,9 @@ private:
 			case Role::Number:
 				return item.number ? item.number : QVariant {};
 
+			case Role::CardColor:
+				return item.cardColor;
+
 			default:
 				break;
 		}
@@ -284,6 +287,6 @@ ModelTeam::~ModelTeam() = default;
 bool ModelTeam::filterAcceptsRow(const int sourceRow, const QModelIndex& sourceParent) const
 {
 	const auto sourceIndex  = sourceModel()->index(sourceRow, 0, sourceParent);
-	const auto isSubstitute = sourceIndex.data(Role::MatchId).toInt() == 0 || sourceIndex.data(Role::SubstituteMinute).toInt() != 0;
+	const auto isSubstitute = sourceIndex.data(Role::MatchId).toInt() == 0 || sourceIndex.data(Role::SubstituteMinute).toInt() != 0 || sourceIndex.data(Role::CardColor).toInt() == 255;
 	return isSubstitute == m_isSubstitutes;
 }

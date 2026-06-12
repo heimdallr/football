@@ -27,6 +27,7 @@ public:
 			PlayerCount,
 			SubstituteCount,
 			SourceModel,
+			CardColor,
 		};
 	};
 
