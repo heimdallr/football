@@ -3,7 +3,8 @@
 set BUILD_TYPE=Release
 set BUILD_DIR=%~dp0build\%BUILD_TYPE%
 
-rmdir /s /q %BUILD_DIR%\football
+del /s /q %BUILD_DIR%\bin\*
+del /s /q %BUILD_DIR%\football\*
 
 call %~dp0configure.bat %*
 if %errorlevel% NEQ 0 goto Error

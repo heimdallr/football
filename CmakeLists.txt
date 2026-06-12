@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(COMPANY_NAME HomeCompa)
-set(COPYRIGHT "Â© 2026 heimdallr")
+set(COPYRIGHT "© 2026 heimdallr")
 set(PRODUCT_DESCRIPTION "Footbal championships")
 set(PRODUCT_ICON "${CMAKE_CURRENT_LIST_DIR}/src/home/resources/icons/main.ico")
 
