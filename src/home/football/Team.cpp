@@ -221,6 +221,7 @@ public:
 
 		connect(m_ui.viewPlayers, &QWidget::customContextMenuRequested, this, &Impl::OnPlayersContextMenuRequested);
 		connect(m_ui.viewSubstitutes, &QWidget::customContextMenuRequested, this, &Impl::OnSubstitutesContextMenuRequested);
+		connect(m_ui.viewSubstitutes, &QAbstractItemView::doubleClicked, this, &Impl::OnAddPlayerTriggered);
 	}
 
 	void SetMode(const Mode mode) const
