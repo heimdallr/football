@@ -5,6 +5,7 @@
 
 #include "fnd/IsOneOf.h"
 #include "fnd/ScopedCall.h"
+#include "fnd/algorithm.h"
 
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
@@ -215,6 +216,11 @@ public:
 	explicit Model(std::shared_ptr<SqlDatabase> db)
 		: m_db { std::move(db) }
 	{
+		const auto update = [this] {
+			ResetImpl();
+		};
+		m_subscriptions.emplace_back(m_db->Subscribe("match", update));
+		m_subscriptions.emplace_back(m_db->Subscribe("place", std::move(update)));
 	}
 
 private: // QAbstractItemModel
@@ -295,6 +301,9 @@ private:
 			case Qt::FontRole:
 				return item.Font(index.column());
 
+			case Role::Result:
+				return item.place;
+
 			default:
 				break;
 		}
@@ -319,9 +328,33 @@ private:
 		return assert(false && "unexpected role"), QVariant {};
 	}
 
-	bool SetData(const QModelIndex& /*index*/, const QVariant& /*value*/, const int /*role*/)
+	bool SetData(const QModelIndex& index, const QVariant& value, const int role)
 	{
-		return false;
+		assert(index.isValid() && index.row() < rowCount({}));
+		auto& item = m_items[index.row()];
+		switch (role)
+		{
+			case Role::Result:
+				if (Util::Set(item.place, value.toInt()))
+				{
+					const auto transaction = m_db->StartTransaction();
+					auto query = m_db->CreateQuery("execute procedure set_group_place(?, ?)");
+					query.bindValue(0, item.id);
+					query.bindValue(1, item.place);
+					query.exec();
+					query.next();
+
+					emit dataChanged(this->index(index.row(), 0), this->index(index.row(), columnCount({}) - 1), { Qt::DisplayRole, Role::Result });
+
+					return true;
+				}
+				return false;
+
+			default:
+				break;
+		}
+
+		return assert(false && "unexpected role"), false;
 	}
 
 	bool SetData(const QVariant& value, const int role)
@@ -340,6 +373,12 @@ private:
 
 	void Reset(const int idChamp)
 	{
+		m_idChamp = idChamp;
+		ResetImpl();
+	}
+
+	void ResetImpl()
+	{
 		const ScopedCall resetGuard(
 			[this] {
 				beginResetModel();
@@ -348,14 +387,17 @@ private:
 				endResetModel();
 			}
 		);
-		m_items = GetItems(*m_db, idChamp, m_groupCount);
+		m_items = GetItems(*m_db, m_idChamp, m_groupCount);
 	}
 
 private:
 	PropagateConstPtr<SqlDatabase, std::shared_ptr> m_db;
 
+	std::vector<SqlDatabase::SubscriptionWrapper::Ptr> m_subscriptions;
+
 	Items m_items;
 	int   m_groupCount { 0 };
+	int   m_idChamp { 0 };
 };
 
 } // namespace

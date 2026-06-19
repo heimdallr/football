@@ -2,11 +2,12 @@
 
 #include "Group.h"
 
+#include <QMenu>
 #include <QTimer>
 
 using namespace HomeCompa::Football;
 
-class Group::Impl
+class Group::Impl final : public QObject
 {
 public:
 	Impl(Group& self, std::shared_ptr<ModelGroup> model, std::shared_ptr<Util::ItemViewToolTipper> itemViewToolTipper, std::shared_ptr<Util::ScrollBarController> scrollBarController)
@@ -19,6 +20,15 @@ public:
 		m_ui.view->setModel(m_model.get());
 		m_itemViewToolTipper->SetScrollArea(m_ui.view);
 		m_scrollBarController->SetScrollArea(m_ui.view);
+
+		connect(m_ui.view, &QWidget::customContextMenuRequested, this, &Impl::OnContextMenuRequested);
+		connect(m_ui.view->selectionModel(), &QItemSelectionModel::selectionChanged, this, &Impl::OnSelectionChanged);
+		connect(m_model.get(), &QAbstractItemModel::modelAboutToBeReset, [this] {
+			m_currentRow = m_ui.view->currentIndex().row();
+		});
+		connect(m_model.get(), &QAbstractItemModel::modelReset, [this] {
+			m_ui.view->setCurrentIndex(m_model->index(m_currentRow, 0));
+		});
 	}
 
 	void Init(const int idChamp)
@@ -63,6 +73,42 @@ private:
 			m_ui.view->setSpan(i * (groupSize + 1), 0, groupSize, 1);
 			m_ui.view->setSpan(i * (groupSize + 1) + groupSize, 0, 1, columnCount);
 		}
+
+		InitActions();
+	}
+
+	void InitActions()
+	{
+		if (!m_actions.empty())
+			return;
+
+		const auto initAction = [this](QAction* action, const int result) {
+			connect(action, &QAction::triggered, [this, result] {
+				m_model->setData(m_ui.view->currentIndex(), result, ModelGroup::Role::Result);
+			});
+			action->setShortcut(QKeySequence(Qt::ALT | Qt::Key_0 + result));
+			m_self.addAction(action);
+		};
+
+		initAction(m_actions.emplace_back(new QAction(tr("Clear result"), this)), 0);
+		for (int i = 0, sz = m_model->data({}, ModelGroup::Role::GroupSize).toInt(); i < sz; ++i)
+			initAction(m_actions.emplace_back(new QAction(tr("Set #%1").arg(i + 1), this)), i + 1);
+	}
+
+	void OnContextMenuRequested() const
+	{
+		QMenu menu;
+		menu.setFont(m_self.font());
+		for (auto* action : m_actions)
+			menu.addAction(action);
+
+		menu.exec(QCursor::pos());
+	}
+
+	void OnSelectionChanged()
+	{
+		assert(!m_actions.empty());
+		m_actions.front()->setEnabled(m_model->data(m_ui.view->currentIndex(), ModelGroup::Role::Result).toInt() != 0);
 	}
 
 private:
@@ -71,6 +117,9 @@ private:
 	PropagateConstPtr<ModelGroup, std::shared_ptr>                m_model;
 	PropagateConstPtr<Util::ItemViewToolTipper, std::shared_ptr>  m_itemViewToolTipper;
 	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarController;
+
+	std::vector<QAction*> m_actions;
+	int                   m_currentRow;
 
 	Ui::Group m_ui {};
 };

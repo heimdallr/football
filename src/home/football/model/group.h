@@ -22,6 +22,7 @@ public:
 			ChampId = Qt::UserRole + 1,
 			GroupSize,
 			GroupCount,
+			Result,
 		};
 	};
 
