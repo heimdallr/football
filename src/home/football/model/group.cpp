@@ -60,7 +60,11 @@ struct Item
 		column -= 5;
 
 		if (column < static_cast<int>(score.size()))
-			return score[column] ? QString("%1 : %2").arg(score[column]->first).arg(score[column]->second) : QVariant {};
+		{
+			if (const auto& item = score[static_cast<size_t>(column)])
+				return QString("%1 : %2").arg(item->first).arg(item->second);
+			return {};
+		}
 
 		column -= static_cast<int>(score.size());
 
@@ -216,7 +220,7 @@ public:
 	explicit Model(std::shared_ptr<SqlDatabase> db)
 		: m_db { std::move(db) }
 	{
-		const auto update = [this] {
+		auto update = [this] {
 			ResetImpl();
 		};
 		m_subscriptions.emplace_back(m_db->Subscribe("match", update));

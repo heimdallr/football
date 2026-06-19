@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 {
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
-	QApplication app(argc, argv);
+	[[maybe_unused]] QApplication app(argc, argv);
 	QCoreApplication::setApplicationName(PRODUCT_ID);
 	QCoreApplication::setApplicationVersion(PRODUCT_VERSION);
 

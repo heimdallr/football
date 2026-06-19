@@ -119,7 +119,7 @@ private:
 	PropagateConstPtr<Util::ScrollBarController, std::shared_ptr> m_scrollBarController;
 
 	std::vector<QAction*> m_actions;
-	int                   m_currentRow;
+	int                   m_currentRow { -1 };
 
 	Ui::Group m_ui {};
 };

@@ -220,7 +220,7 @@ private:
 		m_items = ReadItems(*m_settings, *m_db);
 	}
 
-	bool IsNext(const int row) const
+	bool IsNext(const size_t row) const
 	{
 		const auto now = QDateTime::currentDateTime();
 		return m_items[row].dateTime.addSecs(120 * 60) > now && (row == 0 || m_items[row - 1].dateTime.addSecs(120 * 60) < now);
