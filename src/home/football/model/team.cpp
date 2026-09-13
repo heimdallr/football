@@ -12,8 +12,7 @@
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
 
-namespace
-{
+namespace {
 
 using Role = ModelTeam::Role;
 
@@ -145,7 +144,10 @@ private:
 				return item.Display(index.column(), role);
 
 			case Qt::TextAlignmentRole:
-				return QVariant::fromValue((index.column() == 0 || (index.column() == 1 && !item.number) ? Qt::AlignRight : IsOneOf(index.column(), 3, 4) ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter);
+				return QVariant::fromValue((index.column() == 0 || (index.column() == 1 && !item.number) ? Qt::AlignRight
+				                               : IsOneOf(index.column(), 3, 4)                           ? Qt::AlignHCenter
+				                                                                                         : Qt::AlignLeft)
+				                           | Qt::AlignVCenter);
 
 			case Qt::BackgroundRole:
 				return item.Color(index.column());
@@ -243,8 +245,7 @@ private:
 			},
 			[this] {
 				endResetModel();
-			}
-		);
+			});
 
 		m_items = std::move(items);
 	}

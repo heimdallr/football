@@ -7,8 +7,7 @@
 
 #include "SqlDatabase.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class ModelGroup final : public QIdentityProxyModel
 {
@@ -35,4 +34,4 @@ private:
 	PropagateConstPtr<QAbstractItemModel> m_sourceModel;
 };
 
-}
+} // namespace HomeCompa::Football

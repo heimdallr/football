@@ -6,8 +6,7 @@
 #include "SqlDatabase.h"
 #include "Team.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class Match final : public QWidget
 {

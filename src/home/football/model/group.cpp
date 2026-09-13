@@ -10,8 +10,7 @@
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
 
-namespace
-{
+namespace {
 
 using Role  = ModelGroup::Role;
 using Flags = std::unordered_map<int, QPixmap>;
@@ -30,14 +29,12 @@ struct Item
 	QVariant Display(int column) const
 	{
 		const auto count = [this](const auto& f) {
-			return std::ranges::count_if(
-				score | std::views::filter([](const auto& item) {
-					return !!item;
-				}),
+			return std::ranges::count_if(score | std::views::filter([](const auto& item) {
+				return !!item;
+			}),
 				[f](const auto& item) {
 					return f(*item);
-				}
-			);
+				});
 		};
 
 		switch (column)
@@ -95,11 +92,10 @@ struct Item
 
 			case 4:
 				return 3 * count([](const auto& item) {
-						   return item.first > item.second;
-					   })
-				     + count([](const auto& item) {
-						   return item.first == item.second;
-					   });
+					return item.first > item.second;
+				}) + count([](const auto& item) {
+					return item.first == item.second;
+				});
 			case 5:
 				return place ? QVariant { place } : QVariant {};
 
@@ -342,7 +338,7 @@ private:
 				if (Util::Set(item.place, value.toInt()))
 				{
 					const auto transaction = m_db->StartTransaction();
-					auto query = m_db->CreateQuery("execute procedure set_group_place(?, ?)");
+					auto       query       = m_db->CreateQuery("execute procedure set_group_place(?, ?)");
 					query.bindValue(0, item.id);
 					query.bindValue(1, item.place);
 					query.exec();
@@ -389,8 +385,7 @@ private:
 			},
 			[this] {
 				endResetModel();
-			}
-		);
+			});
 		m_items = GetItems(*m_db, m_idChamp, m_groupCount);
 	}
 

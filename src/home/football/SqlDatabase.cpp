@@ -24,9 +24,9 @@ public:
 
 		QObject::connect(m_db.driver(), &QSqlDriver::notification, [this](const QString& name) {
 			const auto callbacks = m_subscriptions | std::views::values | std::views::filter([&](const auto& item) {
-									   return item.first == name;
-								   })
-			                     | std::views::values | std::ranges::to<std::vector>();
+				return item.first == name;
+			}) | std::views::values
+			                     | std::ranges::to<std::vector>();
 			for (auto&& callback : callbacks)
 				callback();
 		});

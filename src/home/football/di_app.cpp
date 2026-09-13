@@ -11,8 +11,7 @@
 #include "MainWindow.h"
 #include "SqlDatabase.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 void DiInit(Hypodermic::ContainerBuilder& builder, std::shared_ptr<Hypodermic::Container>& container)
 {

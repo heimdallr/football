@@ -21,8 +21,7 @@
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
 
-namespace
-{
+namespace {
 
 constexpr auto MAIN_WINDOW      = "MainWindow";
 constexpr auto CHAMP_HEADER_KEY = "ui/ChampHeaderView/layout";
@@ -45,14 +44,13 @@ QString GetChampInfo(const ISettings& settings, const SqlDatabase& db)
 } // namespace
 
 class MainWindow::Impl final
-	: Util::GeometryRestorable
-	, Util::GeometryRestorableObserver
+    : Util::GeometryRestorable
+    , Util::GeometryRestorableObserver
 {
 	NON_COPY_MOVABLE(Impl)
 
 public:
-	Impl(
-		MainWindow&                                self,
+	Impl(MainWindow&                               self,
 		std::shared_ptr<const IFactory>            factory,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
@@ -60,8 +58,7 @@ public:
 		std::shared_ptr<Match>                     match,
 		std::shared_ptr<Group>                     group,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
-		std::shared_ptr<Util::ScrollBarController> scrollBarController
-	)
+		std::shared_ptr<Util::ScrollBarController> scrollBarController)
 		: GeometryRestorable(*this, settings, MAIN_WINDOW)
 		, GeometryRestorableObserver(self)
 		, m_self { self }
@@ -250,17 +247,15 @@ private:
 	Ui::MainWindow m_ui {};
 };
 
-MainWindow::MainWindow(
-	std::shared_ptr<IFactory>                  factory,
-	std::shared_ptr<ISettings>                 settings,
-	std::shared_ptr<SqlDatabase>               db,
-	std::shared_ptr<ModelChamp>                modelChamp,
-	std::shared_ptr<Match>                     match,
-	std::shared_ptr<Group>                     group,
-	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
-	std::shared_ptr<Util::ScrollBarController> scrollBarController,
-	QWidget*                                   parent
-)
+MainWindow::MainWindow(std::shared_ptr<IFactory> factory,
+	std::shared_ptr<ISettings>                   settings,
+	std::shared_ptr<SqlDatabase>                 db,
+	std::shared_ptr<ModelChamp>                  modelChamp,
+	std::shared_ptr<Match>                       match,
+	std::shared_ptr<Group>                       group,
+	std::shared_ptr<Util::ItemViewToolTipper>    itemViewToolTipper,
+	std::shared_ptr<Util::ScrollBarController>   scrollBarController,
+	QWidget*                                     parent)
 	: QMainWindow(parent)
 	, m_impl(*this, std::move(factory), std::move(settings), std::move(db), std::move(modelChamp), std::move(match), std::move(group), std::move(itemViewToolTipper), std::move(scrollBarController))
 {

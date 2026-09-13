@@ -5,8 +5,7 @@
 
 #include "settings/ISettings.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class SqlDatabase
 {

@@ -11,15 +11,13 @@
 #include "SqlDatabase.h"
 #include "ViewDelegateStateFocus.h"
 
-namespace HomeCompa
-{
+namespace HomeCompa {
 
 class ISettings;
 
 }
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 struct MatchTeamInfo
 {
@@ -41,16 +39,14 @@ public:
 	};
 
 public:
-	Team(
-		std::shared_ptr<ISettings>                 settings,
+	Team(std::shared_ptr<ISettings>                settings,
 		std::shared_ptr<SqlDatabase>               db,
 		std::shared_ptr<ViewDelegateStateFocus>    viewDelegateStateFocus,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
 		std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
 		std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes,
-		QWidget*                                   parent = nullptr
-	);
+		QWidget*                                   parent = nullptr);
 	~Team() override;
 
 	void          SetMode(Mode mode);

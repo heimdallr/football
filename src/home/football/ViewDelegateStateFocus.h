@@ -5,8 +5,7 @@
 
 class QAbstractItemDelegate;
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class ViewDelegateStateFocus
 {

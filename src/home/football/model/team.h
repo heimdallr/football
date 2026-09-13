@@ -5,8 +5,7 @@
 #include "fnd/NonCopyMovable.h"
 #include "fnd/memory.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class SqlDatabase;
 

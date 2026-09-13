@@ -15,8 +15,7 @@
 #include "Match.h"
 #include "SqlDatabase.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class MainWindow final : public QMainWindow
 {
@@ -24,8 +23,7 @@ class MainWindow final : public QMainWindow
 	NON_COPY_MOVABLE(MainWindow)
 
 public:
-	MainWindow(
-		std::shared_ptr<IFactory>                  factory,
+	MainWindow(std::shared_ptr<IFactory>           factory,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
 		std::shared_ptr<ModelChamp>                modelChamp,
@@ -33,8 +31,7 @@ public:
 		std::shared_ptr<Group>                     group,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
 		std::shared_ptr<Util::ScrollBarController> scrollBarController,
-		QWidget*                                   parent = nullptr
-	);
+		QWidget*                                   parent = nullptr);
 	~MainWindow() override;
 
 private:

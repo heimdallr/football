@@ -17,8 +17,7 @@
 using namespace HomeCompa::Football;
 using namespace HomeCompa;
 
-namespace
-{
+namespace {
 
 constexpr auto INPUT_DIALOG_GEOMETRY_KEY = "ui/MinuteInputDialog/geometry";
 
@@ -190,16 +189,14 @@ std::pair<QVariant, QVariant> GetMinute(ISettings& settings, QWidget& parent, co
 class Team::Impl : public QObject
 {
 public:
-	explicit Impl(
-		Team&                                      self,
+	explicit Impl(Team&                            self,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<SqlDatabase>               db,
 		std::shared_ptr<ViewDelegateStateFocus>    viewDelegateStateFocus,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
 		std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
-		std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes
-	)
+		std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes)
 		: m_self { self }
 		, m_settings { std::move(settings) }
 		, m_db { std::move(db) }
@@ -333,12 +330,11 @@ private:
 			OnCardTriggered(*m_ui.viewPlayers, id);
 		});
 		menu.addSeparator();
-		menu.addAction(
-				Tr(REMOVE_PLAYER),
+		menu.addAction(Tr(REMOVE_PLAYER),
 				[this] {
 					OnRemovePlayerTriggered();
-				}
-		)->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Delete));
+				})
+			->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Delete));
 		menu.exec(QCursor::pos());
 	}
 
@@ -368,13 +364,11 @@ private:
 			OnCardTriggered(*m_ui.viewSubstitutes, id);
 		});
 
-		if (auto* action = menu.addAction(
-				Tr(SUBSTITUTE),
+		if (auto* action = menu.addAction(Tr(SUBSTITUTE),
 				[this] {
 					OnSubstituteTriggered();
-				}
-			);
-		    !hasNumber || !m_ui.viewPlayers->currentIndex().isValid())
+				});
+			!hasNumber || !m_ui.viewPlayers->currentIndex().isValid())
 			action->setEnabled(false);
 
 		menu.exec(QCursor::pos());
@@ -470,27 +464,23 @@ private:
 	Ui::Team m_ui;
 };
 
-Team::Team(
-	std::shared_ptr<ISettings>                 settings,
+Team::Team(std::shared_ptr<ISettings>          settings,
 	std::shared_ptr<SqlDatabase>               db,
 	std::shared_ptr<ViewDelegateStateFocus>    viewDelegateStateFocus,
 	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperPlayers,
 	std::shared_ptr<Util::ScrollBarController> scrollBarControllerPlayers,
 	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipperSubstitutes,
 	std::shared_ptr<Util::ScrollBarController> scrollBarControllerSubstitutes,
-	QWidget*                                   parent
-)
+	QWidget*                                   parent)
 	: QWidget(parent)
-	, m_impl(
-		  *this,
+	, m_impl(*this,
 		  std::move(settings),
 		  std::move(db),
 		  std::move(viewDelegateStateFocus),
 		  std::move(itemViewToolTipperPlayers),
 		  std::move(scrollBarControllerPlayers),
 		  std::move(itemViewToolTipperSubstitutes),
-		  std::move(scrollBarControllerSubstitutes)
-	  )
+		  std::move(scrollBarControllerSubstitutes))
 {
 }
 

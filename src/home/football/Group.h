@@ -9,8 +9,7 @@
 #include "utilgui/ItemViewToolTipper.h"
 #include "utilgui/ScrollBarController.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class Group final : public QWidget
 {

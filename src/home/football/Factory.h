@@ -4,15 +4,13 @@
 
 #include "fnd/NonCopyMovable.h"
 
-namespace Hypodermic
-{
+namespace Hypodermic {
 
 class Container;
 
 }
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class SelectChampDialog;
 

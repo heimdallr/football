@@ -9,8 +9,7 @@
 
 using namespace HomeCompa::Football;
 
-namespace
-{
+namespace {
 
 constexpr auto CONTEXT = "SelectChampDialog";
 
@@ -86,19 +85,17 @@ private:
 } // namespace
 
 class SelectChampDialog::Impl final
-	: Util::GeometryRestorable
-	, Util::GeometryRestorableObserver
+    : Util::GeometryRestorable
+    , Util::GeometryRestorableObserver
 {
 	NON_COPY_MOVABLE(Impl)
 
 public:
-	Impl(
-		QDialog&                                   self,
+	Impl(QDialog&                                  self,
 		const SqlDatabase&                         db,
 		std::shared_ptr<ISettings>                 settings,
 		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
-		std::shared_ptr<Util::ScrollBarController> scrollBarController
-	)
+		std::shared_ptr<Util::ScrollBarController> scrollBarController)
 		: GeometryRestorable(*this, settings, "SelectChampDialog")
 		, GeometryRestorableObserver(self)
 		, m_settings { std::move(settings) }
@@ -140,13 +137,11 @@ private:
 	Ui::SelectChampDialog m_ui {};
 };
 
-SelectChampDialog::SelectChampDialog(
-	const std::shared_ptr<SqlDatabase>&        db,
-	std::shared_ptr<ISettings>                 settings,
-	std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
-	std::shared_ptr<Util::ScrollBarController> scrollBarController,
-	QWidget*                                   parent
-)
+SelectChampDialog::SelectChampDialog(const std::shared_ptr<SqlDatabase>& db,
+	std::shared_ptr<ISettings>                                           settings,
+	std::shared_ptr<Util::ItemViewToolTipper>                            itemViewToolTipper,
+	std::shared_ptr<Util::ScrollBarController>                           scrollBarController,
+	QWidget*                                                             parent)
 	: QDialog(parent)
 	, m_impl(*this, *db, std::move(settings), std::move(itemViewToolTipper), std::move(scrollBarController))
 {

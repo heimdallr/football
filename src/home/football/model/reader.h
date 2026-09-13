@@ -7,11 +7,9 @@
 
 #include "fnd/ToTuple.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
-namespace details
-{
+namespace details {
 
 template <typename T>
 void Read(T& /*dst*/, const QVariant& /*src*/) = delete;

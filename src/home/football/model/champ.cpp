@@ -13,16 +13,19 @@
 using namespace HomeCompa;
 using namespace HomeCompa::Football;
 
-namespace
-{
+namespace {
 
 using Role = ModelChamp::Role;
 
 constexpr auto CONTEXT = "ChampModel";
 
 constexpr const char* HEADERS[] {
-	QT_TRANSLATE_NOOP("ChampModel", "Date, Time"), QT_TRANSLATE_NOOP("ChampModel", "Stage"), QT_TRANSLATE_NOOP("ChampModel", "Group"),
-	QT_TRANSLATE_NOOP("ChampModel", "Teams"),      QT_TRANSLATE_NOOP("ChampModel", "Score"), QT_TRANSLATE_NOOP("ChampModel", "Stadium. City"),
+	QT_TRANSLATE_NOOP("ChampModel", "Date, Time"),
+	QT_TRANSLATE_NOOP("ChampModel", "Stage"),
+	QT_TRANSLATE_NOOP("ChampModel", "Group"),
+	QT_TRANSLATE_NOOP("ChampModel", "Teams"),
+	QT_TRANSLATE_NOOP("ChampModel", "Score"),
+	QT_TRANSLATE_NOOP("ChampModel", "Stadium. City"),
 };
 
 struct Item
@@ -187,15 +190,13 @@ private:
 		switch (role)
 		{
 			case Role::CurrentMatchRow:
-				if (const auto it = std::ranges::upper_bound(
-						m_items,
+				if (const auto it = std::ranges::upper_bound(m_items,
 						QDateTime::currentDateTime().addSecs(-120 * 60),
 						{},
 						[](const auto& item) {
 							return item.dateTime;
-						}
-					);
-				    it != m_items.end())
+						});
+					it != m_items.end())
 					return std::distance(m_items.begin(), it);
 				return {};
 
@@ -215,8 +216,7 @@ private:
 			},
 			[this] {
 				endResetModel();
-			}
-		);
+			});
 		m_items = ReadItems(*m_settings, *m_db);
 	}
 

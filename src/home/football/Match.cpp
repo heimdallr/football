@@ -6,14 +6,13 @@
 
 using namespace HomeCompa::Football;
 
-namespace
-{
+namespace {
 
 bool HasFocus(const QWidget& widget)
 {
 	return widget.hasFocus() || std::ranges::any_of(widget.findChildren<const QWidget*>(), [](const QWidget* w) {
-			   return w->hasFocus();
-		   });
+		return w->hasFocus();
+	});
 }
 
 }

@@ -11,21 +11,18 @@
 
 #include "SqlDatabase.h"
 
-namespace HomeCompa::Football
-{
+namespace HomeCompa::Football {
 
 class SelectChampDialog final : public QDialog
 {
 	NON_COPY_MOVABLE(SelectChampDialog)
 
 public:
-	SelectChampDialog(
-		const std::shared_ptr<SqlDatabase>&        db,
-		std::shared_ptr<ISettings>                 settings,
-		std::shared_ptr<Util::ItemViewToolTipper>  itemViewToolTipper,
-		std::shared_ptr<Util::ScrollBarController> scrollBarController,
-		QWidget*                                   parent = nullptr
-	);
+	SelectChampDialog(const std::shared_ptr<SqlDatabase>& db,
+		std::shared_ptr<ISettings>                        settings,
+		std::shared_ptr<Util::ItemViewToolTipper>         itemViewToolTipper,
+		std::shared_ptr<Util::ScrollBarController>        scrollBarController,
+		QWidget*                                          parent = nullptr);
 	~SelectChampDialog() override;
 
 private:
