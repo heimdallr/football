@@ -71,7 +71,7 @@ set(QtPlugins QSvgIcon QWindowsIntegration QModernWindowsStyle QIBaseDriver)
 find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS ${QtModules})
 find_package(plog REQUIRED)
 find_package(Boost REQUIRED)
-find_package(ICU REQUIRED COMPONENTS tu io uc i18n data)
+find_package(ICU REQUIRED COMPONENTS io uc i18n data)
 
 add_compile_definitions(PLOG_IMPORT)
 link_directories(${CMAKE_CURRENT_BINARY_DIR})
